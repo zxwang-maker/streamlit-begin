@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 import joblib
 import matplotlib.colors as mcolors
+import traceback
 
 TRADING_DAYS = 252
 st.set_page_config(page_title="Portfolio Risk Dashboard", layout="wide")
@@ -460,5 +461,7 @@ else:
           
 
            
+
     except Exception as e:
-        st.error(f"Error processing inputs: {str(e)}")
+        st.error("Error processing inputs")
+        st.code(traceback.format_exc())
