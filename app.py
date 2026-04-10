@@ -387,21 +387,17 @@ else:
 
             new_weight_str = st.text_input(
                 f"Enter {n} weights for [ {' | '.join(tickers)} ] :",
-                value=st.session_state['weight_input_str'],
-                placeholder="e.g. 2 3 5"
+                value=st.session_state["weight_input_str"],
+                placeholder="e.g. 2 3 5",
+                key="weight_input_str_box"
             )
 
-            new_weight_str = st.text_input(
-                f"Enter {n} weights for [ {' | '.join(tickers)} ] :",
-                value=st.session_state['weight_input_str'],
-                placeholder="e.g. 2 3 5"
-            )
 
             # ✅ 只有当用户真的改了输入，才保存并 rerun
             if new_weight_str != st.session_state['weight_input_str']:
                 st.session_state['weight_input_str'] = new_weight_str
                 st.rerun()  # 让下一次循环用新权重重新算
-
+s
             st.markdown("**Final Allocated Weights:**")
             w_cols = st.columns(n)
             for i, t in enumerate(tickers):
