@@ -292,6 +292,16 @@ else:
         download_tickers = tickers if "SPY" in tickers else tickers + ["SPY"]
         prices_all = fetch_prices(download_tickers, period=period)
 
+        available = [t for t in tickers if t in prices_all.columns]
+        missing = [t for t in tickers if t not in prices_all.columns]
+        if missing:
+            st.warning(f"Missing tickers dropped: {missing}")
+        tickers = available
+        n = len(tickers)
+        if n < 2:
+            st.error("Not enough valid tickers after download.")
+            st.stop()
+
         prices_assets = prices_all[tickers].copy()
         prices_spy = prices_all["SPY"].copy() if "SPY" in prices_all.columns else None
         if prices_spy is None:
@@ -319,9 +329,18 @@ else:
         rets_spy = rets_spy.loc[common_idx]
 
         # ML Features & Prediction
-        X_rt = build_realtime_feature_vector(rets_assets, rets_spy, final_weights[:len(tickers_used)])
-        pred_vol = float(ridge.predict(X_rt)[0])
-        pred_prob = float(rf.predict_proba(X_rt)[0, 1])
+        # ML Features & Prediction (use the SAME feature pipeline as training)
+        w_vec = np.array(final_weights[:len(tickers_used)], dtype=float)
+
+        X_rt = build_realtime_feature_vector(
+            rets_assets[tickers_used],   # keep only selected tickers, in the same order
+            rets_spy,
+            w_vec
+        )
+
+        X_rt2 = X_rt.tail(1)  # make sure it's 1 row
+        pred_vol = float(ridge.predict(X_rt2).ravel()[0])
+        pred_prob = float(rf.predict_proba(X_rt2)[0, 1])
 
         portfolio_return = rets_assets[tickers_used].dot(final_weights[:len(tickers_used)])
         exp_return = portfolio_return.mean() * TRADING_DAYS
@@ -356,7 +375,14 @@ else:
             # 如果用户敲击回车改变了数字，自动保存并强制网页局部刷新
             if new_weight_str != st.session_state['weight_input_str']:
                 st.session_state['weight_input_str'] = new_weight_str
-                st.rerun()
+
+             # update weights_used based on new input, then rerun
+            try:
+                weights_used = parse_weights(new_weight_str, n)
+            except ValueError:
+                weights_used = np.ones(n) / n
+
+            st.rerun()
 
             st.markdown("**Final Allocated Weights:**")
             w_cols = st.columns(n)
