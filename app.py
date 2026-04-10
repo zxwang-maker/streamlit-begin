@@ -15,6 +15,138 @@ TRADING_DAYS = 252
 st.set_page_config(page_title="Portfolio Risk Dashboard", layout="wide")
 st.title("Portfolio Risk Dashboard")
 
+st.markdown("""
+<style>
+/* Page title spacing */
+.block-container {padding-top: 1.5rem;}
+
+/* Card grid */
+.metric-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 8px;
+}
+@media(max-width: 980px){
+  .metric-grid{grid-template-columns: 1fr;}
+}
+
+/* Card */
+.card{
+  border: 1px solid #EEF0F4;
+  border-radius: 16px;
+  padding: 18px 18px 14px 18px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+}
+
+/* Card header */
+.card-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.card-left{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+}
+.icon-wrap{
+  width:44px;height:44px;border-radius: 999px;
+  display:flex;align-items:center;justify-content:center;
+  background: #F4F7FF;
+  border: 1px solid #E7ECFF;
+}
+.icon{
+  font-size:18px; line-height: 1;
+}
+.card-title{
+  font-size: 14px;
+  font-weight: 700;
+  color:#0F172A;
+  margin:0;
+}
+.card-sub{
+  font-size: 12px;
+  color:#64748B;
+  margin:2px 0 0 0;
+}
+
+/* Big value */
+.big{
+  font-size: 36px;
+  font-weight: 800;
+  color:#0F172A;
+  letter-spacing: -0.5px;
+  margin: 8px 0 6px 0;
+}
+
+/* Badge */
+.badge{
+  display:inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  margin-left: 10px;
+  transform: translateY(-6px);
+}
+.badge-blue{background:#EAF2FF;color:#1D4ED8;border-color:#D8E6FF;}
+.badge-green{background:#E9F9F0;color:#16A34A;border-color:#D2F2DF;}
+.badge-purple{background:#F3E8FF;color:#7C3AED;border-color:#E9D5FF;}
+.badge-orange{background:#FFF1E6;color:#EA580C;border-color:#FFE2CC;}
+
+/* Divider */
+.hr{height:1px;background:#EEF0F4;margin: 10px 0 10px 0;}
+
+/* Description */
+.desc{
+  font-size: 12.5px;
+  color:#475569;
+  line-height: 1.5;
+  margin: 0 0 10px 0;
+}
+
+/* Scale bar */
+.scale-wrap{margin-top: 4px;}
+.scale{
+  position:relative;
+  height: 8px;
+  background: #EEF2F7;
+  border-radius: 999px;
+  overflow:hidden;
+}
+.fill{
+  position:absolute;left:0;top:0;bottom:0;
+  border-radius: 999px;
+}
+.dot{
+  position:absolute;top:50%;
+  width:14px;height:14px;border-radius:999px;
+  transform: translate(-50%,-50%);
+  border: 3px solid white;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.15);
+}
+.scale-labels{
+  display:flex;
+  justify-content:space-between;
+  font-size: 11px;
+  color:#64748B;
+  margin-top: 6px;
+}
+.scale-labels span{white-space:nowrap;}
+.small-note{
+  font-size: 11px;
+  color:#94A3B8;
+  margin-top: 10px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 from feature_engineering import (
     build_features_from_returns,
     build_stock_features_for_kmeans
@@ -375,39 +507,157 @@ else:
 
         # === 4. UI 页面分发阶段 ===
         if page == "Page 1: Risk":
-            st.subheader("Portfolio Input and Risk Summary")
+            st.markdown("## Portfolio Overview")
+            st.markdown("Key metrics at a glance to help you quickly understand your portfolio’s risk and return profile.")
 
-            # --- 全新的权重输入设计 ---
-            st.markdown("### ⚖️ Set Portfolio Weights")
-            st.info(
-                "💡 **Instruction:** Enter relative weights for your tickers separated by spaces. "
-                "You don't need to make them add up to 100%—the app will automatically normalize them for you! "
-                "(e.g., `2 3 5` or `1 1 1`). Leave blank for equal weights."
+            # ---------- helper functions ----------
+            def clamp01(x: float) -> float:
+                return float(max(0.0, min(1.0, x)))
+
+            def format_pct(x: float) -> str:
+                return f"{x*100:.2f}%"
+
+            def risk_badge_from_vol(v: float):
+                if v < 0.10:
+                    return ("Low", "badge-blue")
+                elif v < 0.20:
+                    return ("Medium", "badge-purple")
+                elif v < 0.30:
+                    return ("Elevated", "badge-orange")
+                else:
+                    return ("Very High", "badge-orange")
+
+            def badge_from_return(r: float):
+                if r < 0.05:
+                    return ("Low", "badge-blue")
+                elif r < 0.15:
+                    return ("Moderate", "badge-purple")
+                elif r < 0.25:
+                    return ("High", "badge-green")
+                else:
+                    return ("Very High", "badge-green")
+
+            def badge_from_divscore(s: float):
+                if s < 40:
+                    return ("Low", "badge-orange")
+                elif s < 60:
+                    return ("Medium", "badge-purple")
+                elif s < 80:
+                    return ("Good", "badge-green")
+                else:
+                    return ("Excellent", "badge-green")
+
+            def badge_from_ml(prob: float):
+                if prob < 0.20:
+                    return ("Low Risk", "badge-green")
+                elif prob < 0.50:
+                    return ("Medium Risk", "badge-orange")
+                elif prob < 0.75:
+                    return ("High Risk", "badge-orange")
+                else:
+                    return ("Very High Risk", "badge-orange")
+
+            def scale_html(value_0to1: float, color: str, labels: list[str]):
+                p = clamp01(value_0to1)
+                left = f"{p*100:.1f}%"
+                return f"""
+                <div class="scale-wrap">
+                <div class="scale">
+                    <div class="fill" style="width:{left}; background:{color}; opacity:0.35;"></div>
+                    <div class="dot" style="left:{left}; background:{color};"></div>
+                </div>
+                <div class="scale-labels">
+                    {''.join([f"<span>{lab}</span>" for lab in labels])}
+                </div>
+                </div>
+                """
+
+            def card_html(icon_bg: str, icon: str, title_en: str, subtitle: str,
+                        big_value: str, badge_text: str, badge_class: str,
+                        desc: str, scale_block: str):
+                return f"""
+                <div class="card">
+                <div class="card-top">
+                    <div class="card-left">
+                    <div class="icon-wrap" style="background:{icon_bg}; border-color:#EEF0F4;">
+                        <div class="icon">{icon}</div>
+                    </div>
+                    <div>
+                        <div class="card-title">{title_en}</div>
+                        <div class="card-sub">{subtitle}</div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="big">{big_value}
+                    <span class="badge {badge_class}">{badge_text}</span>
+                </div>
+
+                <div class="hr"></div>
+                <p class="desc">{desc}</p>
+                {scale_block}
+                </div>
+                """
+
+            # ---------- values ----------
+            vol_val = float(ann_vol)
+            ret_val = float(exp_return)
+            div_val = float(div_score)
+            ml_prob = float(pred_prob)
+
+            vol_badge, vol_badge_class = risk_badge_from_vol(vol_val)
+            ret_badge, ret_badge_class = badge_from_return(ret_val)
+            div_badge, div_badge_class = badge_from_divscore(div_val)
+            ml_badge,  ml_badge_class  = badge_from_ml(ml_prob)
+
+            # normalize for scale bars
+            vol_norm = clamp01(vol_val / 0.40)                 # treat 40% vol as max
+            ret_norm = clamp01((ret_val - 0.00) / 0.40)        # treat 40% return as max
+            div_norm = clamp01(div_val / 100.0)
+            ml_norm  = clamp01(ml_prob)
+
+            # descriptions
+            vol_desc = f"Measures price variability of the portfolio. {format_pct(vol_val)} indicates noticeable fluctuations and potentially larger swings in outcomes."
+            ret_desc = f"A simple annualized estimate based on historical returns. {format_pct(ret_val)} suggests higher potential return, typically accompanied by higher risk."
+            div_desc = f"Captures how diversified the portfolio is (lower correlation implies better diversification). {div_val:.1f} indicates a moderate diversification level."
+            ml_desc  = f"Machine-learning-based risk probability estimate. The model label is “{risk_label}”, with an estimated risk probability of about {ml_prob:.0%}."
+
+            # scale labels
+            vol_scale = scale_html(
+                vol_norm, "#3B82F6",
+                ["Low <10%", "Medium 10–20%", "High 20–30%", "Very High >30%"]
+            )
+            ret_scale = scale_html(
+                ret_norm, "#22C55E",
+                ["Low <5%", "Medium 5–15%", "High 15–25%", "Very High >25%"]
+            )
+            div_scale = scale_html(
+                div_norm, "#A855F7",
+                ["Low <40", "Medium 40–60", "Good 60–80", "Excellent >80"]
+            )
+            ml_scale = scale_html(
+                ml_norm, "#F59E0B",
+                ["Low <20%", "Medium 20–50%", "High 50–75%", "Very High >75%"]
             )
 
-            new_weight_str = st.text_input(
-                f"Enter {n} weights for [ {' | '.join(tickers)} ] :",
-                value=st.session_state["weight_input_str"],
-                placeholder="e.g. 2 3 5",
-                key="weight_input_str_box"
-            )
+            # ---------- render grid ----------
+            grid_html = f"""
+            <div class="metric-grid">
+            {card_html("#EAF2FF","📈","Current Annualized Volatility","Volatility (annualized)",
+                        format_pct(vol_val), vol_badge, vol_badge_class, vol_desc, vol_scale)}
 
+            {card_html("#E9F9F0","📊","Expected Annual Return","Return (annualized)",
+                        format_pct(ret_val), ret_badge, ret_badge_class, ret_desc, ret_scale)}
 
-            # ✅ 只有当用户真的改了输入，才保存并 rerun
-            if new_weight_str != st.session_state['weight_input_str']:
-                st.session_state['weight_input_str'] = new_weight_str
-                st.rerun()  # 让下一次循环用新权重重新算
+            {card_html("#F3E8FF","🧩","Diversification Score","Correlation-based diversification",
+                        f"{div_val:.1f}", div_badge, div_badge_class, div_desc, div_scale)}
 
-            
-
-            st.markdown("---")
-
-            # 核心风控指标
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("Current Annualized Volatility", f"{ann_vol:.2%}")
-            c2.metric("Expected Annual Return", f"{exp_return:.2%}")
-            c3.metric("Diversification Score", f"{div_score:.1f}")
-            c4.metric("ML Risk Prediction", f"{risk_label} ({pred_prob:.0%})")
+            {card_html("#FFF1E6","🛡️","ML Risk Prediction","Model-based risk probability",
+                        f"{risk_label} ({ml_prob:.0%})", ml_badge, ml_badge_class, ml_desc, ml_scale)}
+            </div>
+            <div class="small-note">Note: These metrics are for informational purposes only and do not constitute investment advice.</div>
+            """
+            st.markdown(grid_html, unsafe_allow_html=True)
 
 
         elif page == "Page 2: History":
