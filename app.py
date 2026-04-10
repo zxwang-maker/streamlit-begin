@@ -312,6 +312,8 @@ else:
             st.stop()
 
         prices_assets = prices_assets_all[tickers_used_input].copy()
+        tickers = tickers_used_input
+        n = len(tickers)
 
         # 2) download SPY separately (do NOT mix with assets)
         prices_spy_df = fetch_prices(["SPY"], period=period)
@@ -389,17 +391,16 @@ else:
                 placeholder="e.g. 2 3 5"
             )
 
-            # 如果用户敲击回车改变了数字，自动保存并强制网页局部刷新
+            new_weight_str = st.text_input(
+                f"Enter {n} weights for [ {' | '.join(tickers)} ] :",
+                value=st.session_state['weight_input_str'],
+                placeholder="e.g. 2 3 5"
+            )
+
+            # ✅ 只有当用户真的改了输入，才保存并 rerun
             if new_weight_str != st.session_state['weight_input_str']:
                 st.session_state['weight_input_str'] = new_weight_str
-
-             # update weights_used based on new input, then rerun
-            try:
-                weights_used = parse_weights(new_weight_str, n)
-            except ValueError:
-                weights_used = np.ones(n) / n
-
-            st.rerun()
+                st.rerun()  # 让下一次循环用新权重重新算
 
             st.markdown("**Final Allocated Weights:**")
             w_cols = st.columns(n)
