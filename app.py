@@ -335,17 +335,21 @@ else:
 
         # ML Features & Prediction
         # ML Features & Prediction (use the SAME feature pipeline as training)
+       # ML Features & Prediction (use the SAME feature pipeline as training)
         w_vec = np.array(final_weights[:len(tickers_used)], dtype=float)
 
         X_rt = build_realtime_feature_vector(
-            rets_assets[tickers_used],   # keep only selected tickers, in the same order
-            rets_spy,
-            w_vec
+        rets_assets[tickers_used],
+        rets_spy,
+        w_vec
         )
 
-        X_rt2 = X_rt.tail(1)  # make sure it's 1 row
-        pred_vol = float(ridge.predict(X_rt2).ravel()[0])
-        pred_prob = float(rf.predict_proba(X_rt2)[0, 1])
+        # 只取最后一行，保证是 1-row
+        X_rt2 = X_rt.tail(1)
+
+        # 预测结果强制压成一维，再取第一个值
+        pred_vol = float(np.asarray(ridge.predict(X_rt2)).ravel()[0])
+        pred_prob = float(np.asarray(rf.predict_proba(X_rt2))[0, 1])
 
         portfolio_return = rets_assets[tickers_used].dot(final_weights[:len(tickers_used)])
         exp_return = portfolio_return.mean() * TRADING_DAYS
