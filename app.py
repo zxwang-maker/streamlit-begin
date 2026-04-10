@@ -84,11 +84,18 @@ def compute_current_metrics(prices_assets: pd.DataFrame, weights: np.ndarray):
 
     corr = rets.corr()
     cov_ann = rets.cov() * TRADING_DAYS
+    # --- force shapes to be correct ---
+    weights = np.asarray(weights, dtype=float).reshape(-1)   # 变成 1D
+    sigma = np.asarray(cov_ann.values, dtype=float)          # cov matrix
 
-    w_vec = weights.reshape(-1,1)
-    sigma = cov_ann.values
-    port_var = float(w_vec.T @ sigma @ w_vec)
-    port_vol = np.sqrt(port_var)
+    w_vec = weights.reshape(-1, 1)                           # column vector
+
+    # sanity check (optional but recommended)
+    if sigma.shape[0] != w_vec.shape[0]:
+        raise ValueError(f"Dimension mismatch: sigma {sigma.shape}, weights {w_vec.shape}")
+
+    port_var = (w_vec.T @ sigma @ w_vec).item()              # 强制取单个标量
+    port_vol = float(np.sqrt(port_var))
 
     mrc = sigma @ w_vec
     rc = (w_vec * mrc).flatten() / port_vol
