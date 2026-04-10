@@ -289,24 +289,29 @@ else:
             
         n = len(tickers)
 
-        download_tickers = tickers if "SPY" in tickers else tickers + ["SPY"]
-        prices_all = fetch_prices(download_tickers, period=period)
+        # 1) download user tickers ONLY
+        prices_assets_all = fetch_prices(tickers, period=period)
 
-        available = [t for t in tickers if t in prices_all.columns]
-        missing = [t for t in tickers if t not in prices_all.columns]
+        # drop tickers that failed (only for user assets)
+        available = [t for t in tickers if t in prices_assets_all.columns]
+        missing = [t for t in tickers if t not in prices_assets_all.columns]
         if missing:
             st.warning(f"Missing tickers dropped: {missing}")
-        tickers = available
-        n = len(tickers)
-        if n < 2:
-            st.error("Not enough valid tickers after download.")
+
+        tickers_used_input = available
+        if len(tickers_used_input) < 2:
+            st.error("Not enough valid tickers after download. Please try different tickers.")
             st.stop()
 
-        prices_assets = prices_all[tickers].copy()
-        prices_spy = prices_all["SPY"].copy() if "SPY" in prices_all.columns else None
-        if prices_spy is None:
+        prices_assets = prices_assets_all[tickers_used_input].copy()
+
+        # 2) download SPY separately (do NOT mix with assets)
+        prices_spy_df = fetch_prices(["SPY"], period=period)
+        if "SPY" not in prices_spy_df.columns:
             st.error("SPY data missing. Needed for market_return feature.")
             st.stop()
+
+        prices_spy = prices_spy_df["SPY"].copy()
 
         # === 2. 权重解析阶段 ===
         if 'weight_input_str' not in st.session_state:
