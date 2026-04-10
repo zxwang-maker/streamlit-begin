@@ -397,7 +397,7 @@ else:
             if new_weight_str != st.session_state['weight_input_str']:
                 st.session_state['weight_input_str'] = new_weight_str
                 st.rerun()  # 让下一次循环用新权重重新算
-s
+
             st.markdown("**Final Allocated Weights:**")
             w_cols = st.columns(n)
             for i, t in enumerate(tickers):
