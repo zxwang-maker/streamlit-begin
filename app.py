@@ -378,7 +378,7 @@ else:
             st.subheader("Portfolio Input and Risk Summary")
 
             # --- 全新的权重输入设计 ---
-            st.markdown("### ⚖️ Set Portfolio Weights")
+            st.markdown("### ⚖️ Set Portfolio Weightshhh")
             st.info(
                 "💡 **Instruction:** Enter relative weights for your tickers separated by spaces. "
                 "You don't need to make them add up to 100%—the app will automatically normalize them for you! "
