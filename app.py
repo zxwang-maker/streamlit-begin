@@ -398,12 +398,6 @@ else:
                 st.session_state['weight_input_str'] = new_weight_str
                 st.rerun()  # 让下一次循环用新权重重新算
 
-            st.markdown("**Final Allocated Weights:**")
-            w_cols = st.columns(n)
-            for i, t in enumerate(tickers):
-                w_cols[i].metric(label=t, value=f"{final_weights[i]:.1%}")
-
-            st.markdown("---")
 
             # 核心风控指标
             c1, c2, c3, c4 = st.columns(4)
