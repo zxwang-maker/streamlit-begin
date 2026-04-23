@@ -593,9 +593,9 @@ else:
 
         # === 4. UI 页面分发阶段 ===
         if page == "Page 1: Risk":
-            
+            st.markdown("## 📊 Portfolio Overview")
             # --- 1. 权重输入区域 (保持功能性) ---
-            st.markdown("### ⚖️ Set Portfolio Weights")
+            st.markdown("## ⚖️ Set Portfolio Weights")
             st.info(
                 "💡 **Instruction:** Enter relative weights separated by spaces (e.g., `2 3 5`). "
                 "The app will automatically normalize them to 100%. Leave blank for equal weights."
@@ -1213,6 +1213,8 @@ else:
 
         #从这开始
         elif page == "Page 3: Rolling Forecast":
+            st.markdown("## 📅 Rolling Forecast")
+            st.markdown("<p style='color:#64748b; font-size:14px;'>We look at the past 60 trading days to estimate what might happen in the next 20 trading days.</p>", unsafe_allow_html=True)
             # 1. 注入自定义 CSS (完全模拟图1的设计)
             custom_css = """
             <style>
@@ -1262,10 +1264,7 @@ else:
                 signal_color = "text-purple"
                 badge_class = "bg-purple-light"
 
-            # --- 页面头部 ---
-            st.markdown('<div class="dashboard-header">Portfolio Risk Dashboard</div>', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-subtitle"><b>Rolling Forecast</b> &nbsp;|&nbsp; We look at the past 60 trading days to estimate what might happen in the next 20 trading days.</div>', unsafe_allow_html=True)
-
+    
             # --- 顶部三大指标卡片 ---
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -1371,6 +1370,7 @@ else:
         
 
         elif page == "Page 4: CAPM":
+            st.markdown("## 📐 CAPM Analysis")
             # 1. 顶部标题区域
             st.markdown("✅ <span style='color:green; font-weight:bold'>CAPM model loaded</span>", unsafe_allow_html=True)
             st.write("---")
@@ -1526,6 +1526,7 @@ else:
 
 
         elif page == "Page 5: Diversification":
+            st.markdown("## 🛡️ Diversification & Risk")
             from datetime import date
 
             # === 预计算所需数据 ===
@@ -1821,6 +1822,7 @@ else:
            
         
         elif page == "Page 6: Individual Stock Performance Across Key Metrics":
+            st.markdown("## 📡 Individual Stock Performance Across Key Metrics")
             from datetime import date
             # === Header ===
             st.markdown(f"""
