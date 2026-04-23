@@ -635,106 +635,106 @@ else:
                 st.stop()
 
                 # 5. 在图表容器中渲染图表 (CAPM Beta by Ticker)
-                with chart_container:
-                    col_title, col_badge = st.columns([3, 1])
-                    with col_title:
-                        st.markdown("#### CAPM Beta by Ticker ⓘ")
-                        st.caption("Beta measures a stock's sensitivity to the overall market (SPY).")
-                    with col_badge:
+            with chart_container:
+                col_title, col_badge = st.columns([3, 1])
+                with col_title:
+                    st.markdown("#### CAPM Beta by Ticker ⓘ")
+                    st.caption("Beta measures a stock's sensitivity to the overall market (SPY).")
+                with col_badge:
                         # 模拟右上角的灰色标签
-                        st.markdown(
-                            "<div style='background-color:#F3F4F6; color:#4B5563; padding:5px 10px; border-radius:15px; font-size:12px; text-align:center; margin-top:10px;'>" +
-                            "Higher Beta = Higher Market Sensitivity" +
-                            "</div>",
-                            unsafe_allow_html=True
-                        )
-                    # Plotly 柱状图
-                    fig = go.Figure()
-                    fig.add_trace(go.Bar(
-                        x=capm_df["Ticker"],
-                        y=capm_df["Beta"],
-                        text=capm_df["Beta"].apply(lambda x: f"{x:.2f}"),
-                        textposition='outside',
-                        marker_color='#60A5FA', # 现代清爽蓝
-                        width=0.4
-                    ))
+                    st.markdown(
+                        "<div style='background-color:#F3F4F6; color:#4B5563; padding:5px 10px; border-radius:15px; font-size:12px; text-align:center; margin-top:10px;'>" +
+                        "Higher Beta = Higher Market Sensitivity" +
+                        "</div>",
+                        unsafe_allow_html=True
+                    )
+                # Plotly 柱状图
+                fig = go.Figure()
+                fig.add_trace(go.Bar(
+                    x=capm_df["Ticker"],
+                    y=capm_df["Beta"],
+                    text=capm_df["Beta"].apply(lambda x: f"{x:.2f}"),
+                    textposition='outside',
+                    marker_color='#60A5FA', # 现代清爽蓝
+                    width=0.4
+                ))
 
-                    #添加 Beta = 1 的虚线基准线
-                    fig.add_hline(
-                        y=1.0, line_dash="dash", line_color="#9CA3AF",
-                        annotation_text="Market Average (Beta = 1)",
-                        annotation_position="top right",
-                        annotation_font_color="#6B7280"
-                    )
+                #添加 Beta = 1 的虚线基准线
+                fig.add_hline(
+                    y=1.0, line_dash="dash", line_color="#9CA3AF",
+                    annotation_text="Market Average (Beta = 1)",
+                    annotation_position="top right",
+                    annotation_font_color="#6B7280"
+                )
                 
-                    fig.update_layout(
-                        plot_bgcolor='white',
-                        margin=dict(t=40, b=20, l=20, r=20),
-                        yaxis=dict(
-                            range=[0, max(2.5, capm_df["Beta"].max() + 0.5)], 
-                            showgrid=True, gridcolor='#F3F4F6', title="Beta"
-                        ),
-                        xaxis=dict(showgrid=False),
-                        height=350
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
+                fig.update_layout(
+                    plot_bgcolor='white',
+                    margin=dict(t=40, b=20, l=20, r=20),
+                    yaxis=dict(
+                        range=[0, max(2.5, capm_df["Beta"].max() + 0.5)], 
+                        showgrid=True, gridcolor='#F3F4F6', title="Beta"
+                    ),
+                    xaxis=dict(showgrid=False),
+                    height=350
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
                 # 6. 在表格容器中渲染表格 (CAPM Results Table)
-                with table_container:
-                    st.markdown("#### CAPM Results Table") 
-                    # 定义 Pandas Styler 的上色逻辑
-                    def style_beta(v): return 'color: #2563EB; font-weight: bold;' # 蓝色
-                    def style_alpha(v): return 'color: #DC2626; font-weight: bold;' if v < 0 else 'color: #16A34A; font-weight: bold;' # 红/绿
-                    def style_return(v): return 'color: #16A34A; font-weight: bold;' # 绿色
-                    styled_df = capm_df.style.format({
-                        "Beta": "{:.3f}",
-                        "Alpha (ann.)": "{:.2%}",
-                        "R^2": "{:.3f}",
-                        "Market Risk Premium (ann.)": "{:.2%}",
-                        "CAPM Expected Return (ann.)": "{:.2%}"
-                    })\
-                    .map(style_beta, subset=['Beta'])\
-                    .map(style_alpha, subset=['Alpha (ann.)'])\
-                    .map(style_return, subset=['CAPM Expected Return (ann.)'])
-                    st.dataframe(styled_df, use_container_width=True, hide_index=True)
+            with table_container:
+                st.markdown("#### CAPM Results Table") 
+                # 定义 Pandas Styler 的上色逻辑
+                def style_beta(v): return 'color: #2563EB; font-weight: bold;' # 蓝色
+                def style_alpha(v): return 'color: #DC2626; font-weight: bold;' if v < 0 else 'color: #16A34A; font-weight: bold;' # 红/绿
+                def style_return(v): return 'color: #16A34A; font-weight: bold;' # 绿色
+                styled_df = capm_df.style.format({
+                    "Beta": "{:.3f}",
+                    "Alpha (ann.)": "{:.2%}",
+                    "R^2": "{:.3f}",
+                    "Market Risk Premium (ann.)": "{:.2%}",
+                    "CAPM Expected Return (ann.)": "{:.2%}"
+                })\
+                .map(style_beta, subset=['Beta'])\
+                .map(style_alpha, subset=['Alpha (ann.)'])\
+                .map(style_return, subset=['CAPM Expected Return (ann.)'])
+                st.dataframe(styled_df, use_container_width=True, hide_index=True)
 
-                # 7. 教学解释卡片 (How to Interpret Beta)
-                with st.container(border=True):
-                    st.markdown("#### 💡 How to Interpret Beta (In Simple Terms)")
-                    st.write("") # 留点空隙
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        st.markdown("**Beta = 1**\n\nMoves with the market.\n\n<span style='color:gray; font-size:14px'>If the market moves 10%, your stock may move about 10%.</span>", unsafe_allow_html=True)
-                    with c2:
-                        st.markdown("**<span style='color:#2563EB'>Beta > 1</span>**\n\nMore volatile than the market.\n\n<span style='color:gray; font-size:14px'>Example: **Beta = 1.5**<br>If the market drops 10%, your stock may drop 15%.<br>If the market rises 10%, your stock may rise 15%.</span>", unsafe_allow_html=True)
-                    with c3:
-                        st.markdown("**<span style='color:#16A34A'>Beta < 1</span>**\n\nLess volatile than the market.\n\n<span style='color:gray; font-size:14px'>Example: **Beta = 0.7**<br>If the market drops 10%, your stock may drop 7%.<br>If the market rises 10%, your stock may rise 7%.</span>", unsafe_allow_html=True)
+            # 7. 教学解释卡片 (How to Interpret Beta)
+            with st.container(border=True):
+                st.markdown("#### 💡 How to Interpret Beta (In Simple Terms)")
+                st.write("") # 留点空隙
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.markdown("**Beta = 1**\n\nMoves with the market.\n\n<span style='color:gray; font-size:14px'>If the market moves 10%, your stock may move about 10%.</span>", unsafe_allow_html=True)
+                with c2:
+                    st.markdown("**<span style='color:#2563EB'>Beta > 1</span>**\n\nMore volatile than the market.\n\n<span style='color:gray; font-size:14px'>Example: **Beta = 1.5**<br>If the market drops 10%, your stock may drop 15%.<br>If the market rises 10%, your stock may rise 15%.</span>", unsafe_allow_html=True)
+                with c3:
+                    st.markdown("**<span style='color:#16A34A'>Beta < 1</span>**\n\nLess volatile than the market.\n\n<span style='color:gray; font-size:14px'>Example: **Beta = 0.7**<br>If the market drops 10%, your stock may drop 7%.<br>If the market rises 10%, your stock may rise 7%.</span>", unsafe_allow_html=True)
 
-                # 8. 投资组合意义卡片 (What This Means for Your Portfolio)
-                with st.container(border=True):
-                    st.markdown("#### 🥧 What This Means for Your Portfolio")
-                    st.caption("Your portfolio includes stocks with different betas. This affects how your portfolio behaves in different market conditions.")
-                    st.write("")
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        st.info("📈 **All High Betas (>1)**\n\nHigher potential returns, but also higher risk. This is like adding leverage.")
-                    with c2:
-                        st.warning("⚖️ **Mixed Betas (Balanced)**\n\nMore stability. Lower overall volatility in both up and down markets.")
-                    with c3:
-                        st.success("🛡️ **All Low Betas (<1)**\n\nMore defensive. Lower risk, but may also mean lower growth potential.")
+            # 8. 投资组合意义卡片 (What This Means for Your Portfolio)
+            with st.container(border=True):
+                st.markdown("#### 🥧 What This Means for Your Portfolio")
+                st.caption("Your portfolio includes stocks with different betas. This affects how your portfolio behaves in different market conditions.")
+                st.write("")
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.info("📈 **All High Betas (>1)**\n\nHigher potential returns, but also higher risk. This is like adding leverage.")
+                with c2:
+                    st.warning("⚖️ **Mixed Betas (Balanced)**\n\nMore stability. Lower overall volatility in both up and down markets.")
+                with c3:
+                    st.success("🛡️ **All Low Betas (<1)**\n\nMore defensive. Lower risk, but may also mean lower growth potential.")
 
-                #9. 投资者总结卡片 (Investor Takeaway)
-                with st.container(border=True):
-                    st.markdown("#### 🎯 Investor Takeaway")
-                    st.markdown("""
-                    - ✅ If your risk tolerance is low, high-beta stocks may not be suitable for you.
-                    - ✅ High-beta stocks may perform well in bull markets but can experience larger losses in downturns.
-                    - ✅ Keep an eye on your portfolio's overall beta — it determines your total market exposure and volatility.
-                    - ✅ Diversify across beta levels to match your goals and comfort with risk.
-                    """)
+            #9. 投资者总结卡片 (Investor Takeaway)
+            with st.container(border=True):
+                st.markdown("#### 🎯 Investor Takeaway")
+                st.markdown("""
+                - ✅ If your risk tolerance is low, high-beta stocks may not be suitable for you.
+                - ✅ High-beta stocks may perform well in bull markets but can experience larger losses in downturns.
+                - ✅ Keep an eye on your portfolio's overall beta — it determines your total market exposure and volatility.
+                - ✅ Diversify across beta levels to match your goals and comfort with risk.
+                """)
 
-                # 底部免责声明
-                st.caption("Note: CAPM is a theoretical model and does not guarantee future performance.")
+            # 底部免责声明
+            st.caption("Note: CAPM is a theoretical model and does not guarantee future performance.")
 
 
         elif page == "Page 5: Diversification":
