@@ -708,6 +708,8 @@ else:
                 with c1:
                     st.markdown("### **Beta ≈ 1**")
                     st.markdown("<p style='color:#6B7280; font-size:14px;'>Market Benchmark: Moves in tandem with the market</p>", unsafe_allow_html=True)
+                    st.markdown("⚖️ **Mixed Betas (Balanced):** More stability. Lower overall volatility in both up and down markets.")
+                    st.write("")
                     st.info("""
                     **Allocation Suggestions:**
                     * **Risk-Averse:** 20%-40% of equity allocation
@@ -720,6 +722,8 @@ else:
                 with c2:
                     st.markdown("### **<span style='color:#2563EB'>Beta > 1</span>**", unsafe_allow_html=True)
                     st.markdown("<p style='color:#6B7280; font-size:14px;'>Offensive: More volatile than the market</p>", unsafe_allow_html=True)
+                    st.markdown("📈 **All High Betas (>1):** Higher potential returns, but also higher risk. This is like adding leverage.")
+                    st.write("") 
                     st.warning("""
                     **Risk Warning:**
                     * If your risk tolerance is low, high-beta stocks may not be suitable for you.
@@ -730,7 +734,8 @@ else:
                 with c3:
                     st.markdown("### **<span style='color:#16A34A'>Beta < 1</span>**", unsafe_allow_html=True)
                     st.markdown("<p style='color:#6B7280; font-size:14px;'>Defensive: Portfolio 'Stabilizer'</p>", unsafe_allow_html=True)
-                    
+                    st.markdown("🛡️ **All Low Betas (<1):** More defensive. Lower risk, but may also mean lower growth potential.")
+                    st.write("")
                     st.success("""
                     **Strategy Logic:**
                     Low-beta stocks act as a stabilizer to hedge against the volatility of mid-to-high beta growth and cyclical stocks.
@@ -749,18 +754,6 @@ else:
                     else:
                         st.write("📍 You currently hold a significant amount of defensive assets. If you anticipate an upcoming bull market, we **recommend decreasing** this allocation to capture more upside potential.")
 
-            # 8. 投资组合意义卡片 (What This Means for Your Portfolio)
-            with st.container(border=True):
-                st.write("")
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    st.info("📈 **All High Betas (>1)**\n\nHigher potential returns, but also higher risk. This is like adding leverage.")
-                with c2:
-                    st.warning("⚖️ **Mixed Betas (Balanced)**\n\nMore stability. Lower overall volatility in both up and down markets.")
-                with c3:
-                    st.success("🛡️ **All Low Betas (<1)**\n\nMore defensive. Lower risk, but may also mean lower growth potential.")
-
-            # 底部免责声明
             st.caption("Note: CAPM is a theoretical model and does not guarantee future performance.")
 
 
