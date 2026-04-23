@@ -1533,9 +1533,14 @@ else:
                 paper_bgcolor="#FFFFFF",
                 margin=dict(t=60, b=100, l=80, r=80),
                 height=560,
+                transition={
+                    "duration": 800,
+                    "easing": "cubic-in-out"
+                },
+                uirevision="radar_chart",
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
             # === Understanding the Metrics Table ===
             st.markdown("""
