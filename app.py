@@ -376,9 +376,86 @@ else:
         # === 4. UI 页面分发阶段 ===
         if page == "Page 1: Risk":
             st.subheader("Portfolio Input and Risk Summary")
+            st.markdown("""
+            <style>
+.metric-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 10px;
+    margin-bottom: 24px;
+}
+.metric-card {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 20px;
+    padding: 24px 28px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.metric-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 4px;
+}
+.metric-subtitle {
+    font-size: 14px;
+    color: #6B7280;
+    margin-bottom: 18px;
+}
+.metric-value-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.metric-value {
+    font-size: 42px;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1;
+}
+.metric-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+}
+.badge-blue { background: #DBEAFE; color: #2563EB; }
+.badge-green { background: #DCFCE7; color: #16A34A; }
+.badge-purple { background: #F3E8FF; color: #9333EA; }
+.badge-orange { background: #FFEDD5; color: #EA580C; }
+
+.metric-desc {
+    font-size: 15px;
+    color: #4B5563;
+    line-height: 1.7;
+    margin-bottom: 18px;
+    border-top: 1px solid #E5E7EB;
+    padding-top: 16px;
+}
+.metric-scale {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    font-size: 14px;
+    color: #6B7280;
+}
+.metric-scale div {
+    text-align: left;
+}
+.metric-scale strong {
+    display: block;
+    color: #374151;
+    margin-bottom: 4px;
+}
+</style>
+""", unsafe_allow_html=True)
+           
 
             # --- 全新的权重输入设计 ---
-            st.markdown("### ⚖️ Set Portfolio Weightshhh")
+            st.markdown("### ⚖️ Set Portfolio Weights")
             st.info(
                 "💡 **Instruction:** Enter relative weights for your tickers separated by spaces. "
                 "You don't need to make them add up to 100%—the app will automatically normalize them for you! "
@@ -399,17 +476,12 @@ else:
                 st.rerun()  # 让下一次循环用新权重重新算
 
 
-            # 核心风控指标
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("Current Annualized Volatility", f"{ann_vol:.2%}")
-            c2.metric("Expected Annual Return", f"{exp_return:.2%}")
-            c3.metric("Diversification Score", f"{div_score:.1f}")
-            c4.metric("ML Risk Prediction", f"{risk_label} ({pred_prob:.0%})")
-
+          
 
         elif page == "Page 2: History":
+       
+            # === 修复重点 2：这五行必须保持统一的缩进深度 ===
             st.subheader("Historical Portfolio Performance")
-
             st.pyplot(plot_cumulative(cum))
 
             rolling_vol = portfolio_return.rolling(20).std() * np.sqrt(TRADING_DAYS)
@@ -456,10 +528,6 @@ else:
             st.caption("Larger contribution means that stock is driving more risk.")
             st.pyplot(plot_risk_contrib(rc_df))
 
-          
-
-           
-
     except Exception as e:
-        st.error("Error processing inputs")
-        st.code(traceback.format_exc())
+     st.error("Error processing inputs")
+    st.code(traceback.format_exc())
