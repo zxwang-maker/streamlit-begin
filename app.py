@@ -375,7 +375,7 @@ run = st.sidebar.button("Run")
 page = st.sidebar.radio(
 
     "Go to page",
-    ["Page 1: Risk", "Page 2: History", "Page 3: Forecast", "Page 4: CAPM", "Page 5: Diversification"],
+    ["Page 1: Risk", "Page 2: History", "Page 3: Rolling Forecast", "Page 4: CAPM", "Page 5: Diversification"],
     index=0
 )
 
@@ -651,10 +651,9 @@ else:
             rolling_vol = portfolio_return.rolling(20).std() * np.sqrt(TRADING_DAYS)
             st.markdown("### 20-Day Rolling Volatility")
             st.pyplot(plot_rolling_vol(rolling_vol))
+        
         elif page == "Page 3: Rolling Forecast":
-
             st.subheader("Rolling Forecast")
-
             st.caption(
                 "This page uses the past 60 trading days average return to estimate the next 20 trading days outlook."
             )
