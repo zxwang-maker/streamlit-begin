@@ -602,6 +602,7 @@ else:
             st.pyplot(plot_rolling_vol(rolling_vol))
 
         elif page == "Page 3: CAPM":
+            st.write("✅ CAPM page loaded")
             st.subheader("CAPM (Single-Factor) for Selected Stocks")
             st.caption("We estimate beta using daily returns vs SPY over the selected time range.")
 
