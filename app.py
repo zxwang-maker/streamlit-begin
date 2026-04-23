@@ -1172,40 +1172,37 @@ else:
 
             # --- 预测概览表格 (使用 HTML 构建精美表格) ---
             st.markdown("### 📊 Forecast Summary")
-            
-            # 构建 HTML 表格内容
-            table_html = "<table class='custom-table'><thead><tr><th>Stock</th><th>Current Price</th><th>Past 60D Avg Daily Return</th><th>Predicted 20D Return</th><th>Predicted Low</th><th>Predicted Base</th><th>Predicted High</th><th>Outlook</th></tr></thead><tbody>"
-            
-            for _, row in summary_df.iterrows():
-                # 格式化百分比颜色
-                past_ret = row['Past 60D Avg Daily Return']
-                pred_ret = row['Predicted 20D Return']
-                
-                past_ret_str = f"<span class='{'text-green' if past_ret>0 else 'text-red'}'><b>{'+' if past_ret>0 else ''}{past_ret:.2%}</b></span>"
-                pred_ret_str = f"<span class='{'text-green' if pred_ret>0 else 'text-red'}'><b>{'+' if pred_ret>0 else ''}{pred_ret:.2%}</b></span>"
-                
-                outlook = row['Outlook']
-                if outlook == "Bullish":
-                    out_badge = "<span class='bg-green-light'>↗ Bullish</span>"
-                elif outlook == "Bearish":
-                    out_badge = "<span class='bg-red-light'>↘ Bearish</span>"
-                else:
-                    out_badge = "<span class='bg-purple-light'>↔ Neutral</span>"
+            # --- 预测概览表格 ---
 
-                table_html += f"""
-                <tr>
-                    <td><b>{row['Stock']}</b></td>
-                    <td>${row['Current Price']}</td>
-                    <td>{past_ret_str}</td>
-                    <td>{pred_ret_str}</td>
-                    <td>${row['Predicted Low']}</td>
-                    <td><b>${row['Predicted Base']}</b></td>
-                    <td>${row['Predicted High']}</td>
-                    <td>{out_badge}</td>
-                </tr>
-                """
-            table_html += "</tbody></table>"
-            st.markdown(table_html, unsafe_allow_html=True)  
+            # 格式化 summary_df 用于显示
+            display_df = summary_df.copy()
+
+            def style_forecast_table(df):
+                def color_return(val):
+                    if isinstance(val, float):
+                        color = '#16a34a' if val > 0 else '#dc2626'
+                        return f'color: {color}; font-weight: bold'
+                    return ''
+                
+                def color_outlook(val):
+                    if val == 'Bullish':
+                        return 'background-color: #dcfce7; color: #166534; font-weight: bold'
+                    elif val == 'Bearish':
+                        return 'background-color: #fee2e2; color: #991b1b; font-weight: bold'
+                    else:
+                        return 'background-color: #ede9fe; color: #5b21b6; font-weight: bold'
+                
+                return df.style.format({
+                    "Past 60D Avg Daily Return": "{:+.2%}",
+                    "Predicted 20D Return":      "{:+.2%}",
+                    "Current Price":             "${:.2f}",
+                    "Predicted Low":             "${:.2f}",
+                    "Predicted Base":            "${:.2f}",
+                    "Predicted High":            "${:.2f}",
+                }).map(color_return, subset=["Past 60D Avg Daily Return", "Predicted 20D Return"])\
+                .map(color_outlook, subset=["Outlook"])
+
+            st.dataframe(style_forecast_table(display_df), use_container_width=True, hide_index=True)
             st.info("💡 **Base price** is our best estimate based on recent trends. Low and high prices show a possible range depending on market volatility.")
 
             # --- 图表区域 ---
