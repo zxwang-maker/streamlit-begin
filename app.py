@@ -645,8 +645,33 @@ else:
             .desc-text { font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 24px; flex-grow: 1;}
             .scale-container { margin-top: auto; }
             .scale-track { height: 6px; background: #f1f5f9; border-radius: 3px; position: relative; margin-bottom: 10px; }
-            .scale-fill { height: 100%; border-radius: 3px; position: absolute; left: 0; top: 0; }
-            .scale-indicator { width: 14px; height: 14px; border-radius: 50%; position: absolute; top: -4px; transform: translateX(-50%); border: 2.5px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+            .scale-fill {
+                height: 100%;
+                border-radius: 3px;
+                position: absolute;
+                left: 0; top: 0;
+                width: 0%;
+                animation: fillBar 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            }
+            .scale-indicator {
+                width: 14px; height: 14px; border-radius: 50%;
+                position: absolute; top: -4px;
+                transform: translateX(-50%);
+                border: 2.5px solid white;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                left: 0%;
+                animation: moveIndicator 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            }
+            @keyframes fillBar {
+                from { width: 0%; }
+                to   { width: var(--target-width); }
+            }
+            @keyframes moveIndicator {
+                from { left: 0%; }
+                to   { left: var(--target-width); }
+            }
+
             .scale-labels { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; text-align: center; }
             .scale-labels span { flex: 1; }
             .footer-note { font-size: 13px; color: #94a3b8; text-align: left; margin-top: 10px; }
@@ -675,8 +700,10 @@ else:
 <div class="desc-text">Measures the price fluctuation of your portfolio. {v_val:.2f}% indicates your portfolio's volatility is {("relatively high, implying larger potential swings in returns" if v_val > 20 else "within a reasonable range")}, suitable for investors with a corresponding risk tolerance.</div>
 <div class="scale-container">
 <div class="scale-track">
-<div class="scale-fill" style="width: {v_pct}%; background: #3b82f6;"></div>
-<div class="scale-indicator" style="left: {v_pct}%; background: #3b82f6;"></div>
+
+<div class="scale-fill" style="--target-width: {v_pct}%; background: #3b82f6;"></div>
+<div class="scale-indicator" style="--target-width: {v_pct}%; background: #3b82f6;"></div>
+
 </div>
 <div class="scale-labels"><span>Low<br>&lt;10%</span><span>Med<br>10-20%</span><span>High<br>20-30%</span><span>V.High<br>&gt;30%</span></div>
 </div>
@@ -697,8 +724,9 @@ else:
 <div class="desc-text">Projected annual return based on historical data and market models. {r_val:.2f}% indicates a {r_badge.lower()} expected return, implying {("higher potential upside, accompanied by greater risk" if r_val > 15 else "a relatively steady return expectation")}.</div>
 <div class="scale-container">
 <div class="scale-track">
-<div class="scale-fill" style="width: {r_pct}%; background: #10b981;"></div>
-<div class="scale-indicator" style="left: {r_pct}%; background: #10b981;"></div>
+<div class="scale-fill" style="--target-width: {r_pct}%; background: #10b981;"></div>
+<div class="scale-indicator" style="--target-width: {r_pct}%; background: #10b981;"></div>
+
 </div>
 <div class="scale-labels"><span>Low<br>&lt;5%</span><span>Med<br>5-15%</span><span>High<br>15-25%</span><span>V.High<br>&gt;25%</span></div>
 </div>
@@ -719,8 +747,9 @@ else:
 <div class="desc-text">Measures how well the assets are distributed. A score of {d_val:.1f} indicates {d_badge.lower()} diversification, meaning {("there is room for optimization to further reduce unsystematic risk" if d_val < 60 else "the risk is well dispersed across the portfolio")}.</div>
 <div class="scale-container">
 <div class="scale-track">
-<div class="scale-fill" style="width: {d_pct}%; background: #8b5cf6;"></div>
-<div class="scale-indicator" style="left: {d_pct}%; background: #8b5cf6;"></div>
+<div class="scale-fill" style="--target-width: {d_pct}%; background: #8b5cf6;"></div>
+<div class="scale-indicator" style="--target-width: {d_pct}%; background: #8b5cf6;"></div>
+
 </div>
 <div class="scale-labels"><span>Low<br>&lt;40</span><span>Fair<br>40-60</span><span>Good<br>60-80</span><span>Great<br>&gt;80</span></div>
 </div>
@@ -741,8 +770,8 @@ else:
 <div class="desc-text">Machine learning prediction of future risk. Evaluated as '{m_badge}', the probability of a major drawdown is {m_val:.0f}%. We recommend to {("stay highly vigilant and consider reducing exposure" if risk_label == "High" else "monitor closely and manage your risk exposure appropriately")}.</div>
 <div class="scale-container">
 <div class="scale-track">
-<div class="scale-fill" style="width: {m_pct}%; background: #f59e0b;"></div>
-<div class="scale-indicator" style="left: {m_pct}%; background: #f59e0b;"></div>
+<div class="scale-fill" style="--target-width: {m_pct}%; background: #f59e0b;"></div>
+<div class="scale-indicator" style="--target-width: {m_pct}%; background: #f59e0b;"></div>
 </div>
 <div class="scale-labels"><span>Low<br>&lt;20%</span><span>Med<br>20-50%</span><span>High<br>50-75%</span><span>V.High<br>&gt;75%</span></div>
 </div>
@@ -751,6 +780,21 @@ else:
 <div class="footer-note">Disclaimer: The above metrics are for reference only and do not constitute investment advice. Investing involves risk.</div>
 """
             st.markdown(html_content, unsafe_allow_html=True)
+
+            # 动画 JS
+            st.markdown(f"""
+            <script>
+            setTimeout(function() {{
+                var fills = document.querySelectorAll('.scale-fill');
+                var indicators = document.querySelectorAll('.scale-indicator');
+                var targets = [{v_pct}, {r_pct}, {d_pct}, {m_pct}];
+                for (var i = 0; i < fills.length; i++) {{
+                    fills[i].style.width = targets[i] + '%';
+                    indicators[i].style.left = targets[i] + '%';
+                }}
+            }}, 100);
+            </script>
+            """, unsafe_allow_html=True)
 
             
         elif page == "Page 2: History":
@@ -1079,38 +1123,28 @@ else:
             # 1. 注入自定义 CSS (完全模拟图1的设计)
             custom_css = """
             <style>
-            .dashboard-header {font-size: 28px; font-weight: 800; color: #1e293b; margin-bottom: 5px;}
-            .dashboard-subtitle {font-size: 14px; color: #64748b; margin-bottom: 20px;}
-            
-            /* 顶部指标卡片 */
-            .metric-card {background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; height: 100%;}
-            .metric-title {font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;}
-            .metric-value {font-size: 28px; font-weight: 800; margin: 8px 0;}
-            .metric-desc {font-size: 12px; color: #94a3b8;}
-            
-            /* 颜色辅助类 */
-            .text-green {color: #22c55e;}
-            .text-red {color: #ef4444;}
-            .text-purple {color: #7c3aed;}
-            .text-dark {color: #1e293b;}
-            .bg-green-light {background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;}
-            .bg-red-light {background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;}
-            .bg-purple-light {background: #ede9fe; color: #5b21b6; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;}
-
-            /* 表格样式 */
-            .custom-table {width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;}
-            .custom-table th {background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 600; text-align: left; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;}
-            .custom-table td {padding: 12px 16px; font-size: 14px; color: #334155; border-bottom: 1px solid #f1f5f9;}
-            
-            /* 底部科普卡片 */
-            .info-card {border-radius: 8px; padding: 16px; margin-top: 10px;}
-            .info-card-green {background: #f0fdf4; border: 1px solid #bbf7d0;}
-            .info-card-red {background: #fef2f2; border: 1px solid #fecaca;}
-            .info-card-gray {background: #f8fafc; border: 1px solid #e2e8f0;}
-            .info-title {font-weight: 700; font-size: 14px; margin-bottom: 4px;}
-            .info-text {font-size: 12px; color: #64748b;}
+            .overview-title { font-size: 32px; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
+            .overview-sub { font-size: 15px; color: #64748b; margin-bottom: 28px; }
+            .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+            .metric-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); display: flex; flex-direction: column;}
+            .card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+            .icon-box { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+            .card-title-en { font-size: 15px; font-weight: 700; color: #334155; }
+            .card-title-cn { font-size: 13px; color: #64748b; margin-top: 2px;}
+            .value-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+            .value-text { font-size: 34px; font-weight: 800; color: #0f172a; line-height: 1; }
+            .badge { padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+            .desc-text { font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 24px; flex-grow: 1;}
+            .scale-container { margin-top: auto; }
+            .scale-track { height: 6px; background: #f1f5f9; border-radius: 3px; position: relative; margin-bottom: 10px; }
+            .scale-fill { height: 100%; border-radius: 3px; position: absolute; left: 0; top: 0; width: 0%; transition: width 1.4s cubic-bezier(0.4,0,0.2,1); }
+            .scale-indicator { width: 14px; height: 14px; border-radius: 50%; position: absolute; top: -4px; left: 0%; transform: translateX(-50%); border: 2.5px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: left 1.4s cubic-bezier(0.4,0,0.2,1); }
+            .scale-labels { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; text-align: center; }
+            .scale-labels span { flex: 1; }
+            .footer-note { font-size: 13px; color: #94a3b8; text-align: left; margin-top: 10px; }
             </style>
             """
+
             st.markdown(custom_css, unsafe_allow_html=True)
 
             # 获取数据
