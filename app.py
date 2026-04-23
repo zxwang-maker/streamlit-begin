@@ -121,6 +121,20 @@ def plot_cumulative(cum):
     plt.title("Portfolio Cumulative Return (Index)")
     plt.tight_layout()
     return fig
+def compute_history_summary(cum: pd.Series, portfolio_return: pd.Series):
+    #Returns summary stats for Page 2 header cards.
+    # Cumulative return: final value of index (starts at 1) - 1
+    cum_return = cum.iloc[-1] - 1
+
+    # Annualized return
+    n_days = len(portfolio_return)
+    ann_return = (1 + cum_return) ** (TRADING_DAYS / n_days) - 1
+
+    # Average 20D rolling vol
+    rolling_vol = portfolio_return.rolling(20).std() * np.sqrt(TRADING_DAYS)
+    avg_rolling_vol = rolling_vol.dropna().mean()
+
+    return cum_return, ann_return, avg_rolling_vol, rolling_vol
 
 def plot_corr_heatmap(corr):
     fig, ax = plt.subplots(figsize=(6.5, 5.5))
@@ -699,13 +713,322 @@ else:
 
             
         elif page == "Page 2: History":
-       
-            st.subheader("Historical Portfolio Performance")
-            st.pyplot(plot_cumulative(cum))
+            from datetime import date
 
-            rolling_vol = portfolio_return.rolling(20).std() * np.sqrt(TRADING_DAYS)
-            st.markdown("### 20-Day Rolling Volatility")
-            st.pyplot(plot_rolling_vol(rolling_vol))
+            # === 计算汇总指标 ===
+            portfolio_return = rets_assets[tickers_used].dot(final_weights[:len(tickers_used)])
+            cum_indexed = (1 + portfolio_return).cumprod() * 100  # 以100为基准
+            cum_return, ann_return, avg_rolling_vol, rolling_vol = compute_history_summary(
+                (1 + portfolio_return).cumprod(), portfolio_return
+            )
+
+            start_date = portfolio_return.index[0].strftime("%b %d, %Y")
+            end_date   = portfolio_return.index[-1].strftime("%b %d, %Y")
+            final_idx  = cum_indexed.iloc[-1]
+            cum_sign   = "+" if cum_return >= 0 else ""
+            ann_sign   = "+" if ann_return >= 0 else ""
+            cum_color  = "#16a34a" if cum_return >= 0 else "#dc2626"
+            ann_color  = "#16a34a" if ann_return >= 0 else "#dc2626"
+
+            # === Header ===
+            st.markdown(f"""
+            <style>
+            .h2-header {{
+                display: flex; justify-content: space-between; align-items: flex-start;
+                margin-bottom: 24px;
+            }}
+            .h2-title {{ font-size: 30px; font-weight: 900; color: #1e293b; display:flex; align-items:center; gap:12px; }}
+            .h2-sub {{ font-size: 14px; color: #64748b; margin-top: 6px; }}
+            .h2-daterange {{
+                background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+                padding: 10px 16px; font-size: 13px; color: #475569;
+                display: flex; align-items: center; gap: 8px;
+            }}
+            /* Summary Cards */
+            .summary-grid {{
+                display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 28px;
+            }}
+            .summary-card {{
+                background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+                padding: 22px 24px; display: flex; justify-content: space-between; align-items: flex-start;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            }}
+            .summary-card-label {{ font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; }}
+            .summary-card-value {{ font-size: 30px; font-weight: 800; line-height: 1; }}
+            .summary-card-desc {{ font-size: 12px; color: #94a3b8; margin-top: 8px; line-height: 1.4; }}
+            .summary-card-icon {{
+                width: 44px; height: 44px; border-radius: 50%;
+                display: flex; align-items: center; justify-content: center; font-size: 20px;
+            }}
+            /* Section Cards */
+            .section-card {{
+                background: white; border: 1px solid #e2e8f0; border-radius: 16px;
+                padding: 28px; margin-bottom: 24px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            }}
+            .section-num {{
+                width: 30px; height: 30px; border-radius: 50%; background: #6366f1;
+                color: white; font-weight: 800; font-size: 15px;
+                display: inline-flex; align-items: center; justify-content: center; margin-right: 10px;
+            }}
+            .section-title {{ font-size: 18px; font-weight: 700; color: #1e293b; display: flex; align-items: center; }}
+            .section-sub {{ font-size: 13px; color: #64748b; margin-top: 6px; margin-bottom: 20px; }}
+            /* Insight Box */
+            .insight-box {{
+                display: flex; align-items: flex-start; gap: 14px;
+                background: #f0fdf4; border-radius: 12px; padding: 16px 20px; margin-top: 20px;
+            }}
+            .insight-box-purple {{
+                background: #f5f3ff;
+            }}
+            .insight-icon {{
+                width: 38px; height: 38px; border-radius: 50%; background: #dcfce7;
+                display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+            }}
+            .insight-icon-purple {{
+                background: #ede9fe;
+            }}
+            .insight-title {{ font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }}
+            .insight-desc {{ font-size: 13px; color: #475569; line-height: 1.5; }}
+            /* How to Interpret */
+            .interpret-section {{
+                background: #fafafa; border: 1px solid #f1f5f9; border-radius: 16px;
+                padding: 24px 28px;
+            }}
+            .interpret-title {{ font-size: 17px; font-weight: 700; color: #1e293b; margin-bottom: 18px;
+                display: flex; align-items: center; gap: 8px; }}
+            .interpret-grid {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }}
+            .interpret-card {{
+                display: flex; align-items: flex-start; gap: 12px;
+            }}
+            .interpret-icon {{
+                width: 40px; height: 40px; border-radius: 10px;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 18px; flex-shrink: 0;
+            }}
+            .interpret-card-title {{ font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }}
+            .interpret-card-desc {{ font-size: 12px; color: #64748b; line-height: 1.5; }}
+            </style>
+
+            <div class="h2-header">
+                <div>
+                    <div class="h2-title">📈 Historical Portfolio Performance</div>
+                    <div class="h2-sub">Explore how your portfolio has performed over time and how its risk has changed.</div>
+                </div>
+                <div class="h2-daterange">
+                    📅 {start_date} &nbsp;→&nbsp; {end_date}
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div>
+                        <div class="summary-card-label">Cumulative Return (Index)</div>
+                        <div class="summary-card-value" style="color:{cum_color};">{cum_sign}{cum_return:.2%}</div>
+                        <div class="summary-card-desc">Total growth of your portfolio<br>during this period.</div>
+                    </div>
+                    <div class="summary-card-icon" style="background:#ecfdf5;">📈</div>
+                </div>
+                <div class="summary-card">
+                    <div>
+                        <div class="summary-card-label">Annualized Return</div>
+                        <div class="summary-card-value" style="color:{ann_color};">{ann_sign}{ann_return:.2%}</div>
+                        <div class="summary-card-desc">Average yearly return<br>(annualized).</div>
+                    </div>
+                    <div class="summary-card-icon" style="background:#ecfdf5;">📊</div>
+                </div>
+                <div class="summary-card">
+                    <div>
+                        <div class="summary-card-label">Volatility (20D Rolling Avg.)</div>
+                        <div class="summary-card-value" style="color:#7c3aed;">{avg_rolling_vol:.2%}</div>
+                        <div class="summary-card-desc">Average short-term volatility<br>of your portfolio.</div>
+                    </div>
+                    <div class="summary-card-icon" style="background:#f5f3ff;">〰️</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # === Chart 1: Cumulative Return ===
+            st.markdown("""
+            <div class="section-card">
+                <div class="section-title">
+                    <span class="section-num">1</span> Portfolio Cumulative Return (Index)
+                </div>
+                <div class="section-sub">Shows how your portfolio has grown over time. The value starts at 100.</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            fig1 = go.Figure()
+            fig1.add_trace(go.Scatter(
+                x=cum_indexed.index,
+                y=cum_indexed.values,
+                mode='lines',
+                line=dict(color='#16a34a', width=2.5),
+                fill='tozeroy',
+                fillcolor='rgba(22,163,74,0.08)',
+                name='Portfolio Index',
+                hovertemplate='%{x|%b %d, %Y}<br>Index: %{y:.2f}<extra></extra>'
+            ))
+            # 终点标注
+            fig1.add_annotation(
+                x=cum_indexed.index[-1], y=cum_indexed.iloc[-1],
+                text=f"  {cum_indexed.iloc[-1]:.2f}",
+                showarrow=False,
+                font=dict(color="white", size=12, family="Arial Black"),
+                bgcolor="#16a34a", borderpad=5, borderradius=6,
+                xanchor="left"
+            )
+            fig1.update_layout(
+                plot_bgcolor='white', paper_bgcolor='white',
+                margin=dict(t=20, b=40, l=60, r=40),
+                height=340,
+                xaxis=dict(showgrid=False, tickfont=dict(size=11, color="#94a3b8"), title=""),
+                yaxis=dict(
+                    showgrid=True, gridcolor='#f1f5f9',
+                    tickfont=dict(size=11, color="#94a3b8"),
+                    title=dict(text="Index", font=dict(size=12, color="#94a3b8"))
+                ),
+                hovermode='x unified',
+                showlegend=False,
+            )
+            st.plotly_chart(fig1, use_container_width=True)
+
+            invested = 10000
+            final_value = invested * cum_indexed.iloc[-1] / 100
+            st.markdown(f"""
+            <div class="insight-box">
+                <div class="insight-icon">⊕</div>
+                <div>
+                    <div class="insight-title">What does this mean?</div>
+                    <div class="insight-desc">
+                        Your portfolio grew by <strong>{cum_sign}{cum_return:.2%}</strong> during this period.
+                        For example, if you invested <strong>${invested:,}</strong>,
+                        it would now be worth about <strong>${final_value:,.0f}</strong>.
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.write("")
+            st.write("")
+
+            # === Chart 2: Rolling Volatility ===
+            st.markdown("""
+            <div class="section-card">
+                <div class="section-title">
+                    <span class="section-num" style="background:#7c3aed;">2</span> 20-Day Rolling Volatility
+                </div>
+                <div class="section-sub">Measures how much your portfolio's daily returns fluctuate over the past 20 trading days.</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            rv = rolling_vol.dropna() * 100  # convert to %
+            avg_rv = rv.mean()
+            high_threshold = 40.0
+            low_threshold = 10.0
+
+            fig2 = go.Figure()
+            fig2.add_trace(go.Scatter(
+                x=rv.index, y=rv.values,
+                mode='lines',
+                line=dict(color='#7c3aed', width=2),
+                fill='tozeroy',
+                fillcolor='rgba(124,58,237,0.08)',
+                name='Rolling Vol',
+                hovertemplate='%{x|%b %d, %Y}<br>Volatility: %{y:.2f}%<extra></extra>'
+            ))
+            # High volatility 红色虚线
+            fig2.add_hline(
+                y=high_threshold, line_dash="dash", line_color="#ef4444", line_width=1.5,
+                annotation_text="High Volatility", annotation_position="right",
+                annotation_font_color="#ef4444", annotation_font_size=11
+            )
+            # Average 灰色虚线
+            fig2.add_hline(
+                y=avg_rv, line_dash="dot", line_color="#94a3b8", line_width=1.5,
+                annotation_text="Average", annotation_position="right",
+                annotation_font_color="#94a3b8", annotation_font_size=11
+            )
+            # Low volatility 绿色标注
+            fig2.add_annotation(
+                x=rv.index[-1], y=low_threshold,
+                text="Low Volatility", showarrow=False,
+                font=dict(color="#16a34a", size=11),
+                xanchor="right"
+            )
+            # 终点标注
+            fig2.add_annotation(
+                x=rv.index[-1], y=rv.iloc[-1],
+                text=f"  {rv.iloc[-1]:.2f}%",
+                showarrow=False,
+                font=dict(color="white", size=12),
+                bgcolor="#7c3aed", borderpad=5, borderradius=6,
+                xanchor="left"
+            )
+            fig2.update_layout(
+                plot_bgcolor='white', paper_bgcolor='white',
+                margin=dict(t=20, b=40, l=60, r=80),
+                height=340,
+                xaxis=dict(showgrid=False, tickfont=dict(size=11, color="#94a3b8"), title=""),
+                yaxis=dict(
+                    showgrid=True, gridcolor='#f1f5f9',
+                    tickfont=dict(size=11, color="#94a3b8"),
+                    title=dict(text="Volatility (%)", font=dict(size=12, color="#94a3b8")),
+                    range=[0, max(high_threshold + 15, rv.max() + 5)]
+                ),
+                hovermode='x unified',
+                showlegend=False,
+            )
+            st.plotly_chart(fig2, use_container_width=True)
+
+            st.markdown(f"""
+            <div class="insight-box insight-box-purple">
+                <div class="insight-icon insight-icon-purple">〰️</div>
+                <div>
+                    <div class="insight-title">What does this mean?</div>
+                    <div class="insight-desc">
+                        This shows the "ups and downs" of your portfolio.
+                        Higher values mean bigger daily swings (more risk).
+                        Lower values mean smoother performance (less risk).
+                        Current rolling volatility is <strong>{rv.iloc[-1]:.2f}%</strong>.
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.write("")
+            st.write("")
+
+            # === How to Interpret ===
+            st.markdown("""
+            <div class="interpret-section">
+                <div class="interpret-title">📈 How to Interpret These Charts</div>
+                <div class="interpret-grid">
+                    <div class="interpret-card">
+                        <div class="interpret-icon" style="background:#ecfdf5;">📈</div>
+                        <div>
+                            <div class="interpret-card-title">Rising Portfolio Return</div>
+                            <div class="interpret-card-desc">Good! Your portfolio is growing over time. Look at the long-term trend rather than short-term dips.</div>
+                        </div>
+                    </div>
+                    <div class="interpret-card">
+                        <div class="interpret-icon" style="background:#f5f3ff;">〰️</div>
+                        <div>
+                            <div class="interpret-card-title">Volatility Spikes</div>
+                            <div class="interpret-card-desc">Market uncertainty or big news can cause sharp swings. It's normal and often temporary.</div>
+                        </div>
+                    </div>
+                    <div class="interpret-card">
+                        <div class="interpret-icon" style="background:#eff6ff;">🛡️</div>
+                        <div>
+                            <div class="interpret-card-title">Stay Focused on the Long Term</div>
+                            <div class="interpret-card-desc">Short-term volatility is normal. Staying invested and diversified helps you ride out the ups and downs.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         
         elif page == "Page 3: Rolling Forecast":
             st.subheader("Rolling Forecast")
