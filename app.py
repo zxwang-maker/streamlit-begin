@@ -762,16 +762,6 @@ else:
                 with c3:
                     st.success("🛡️ **All Low Betas (<1)**\n\nMore defensive. Lower risk, but may also mean lower growth potential.")
 
-            #9. 投资者总结卡片 (Investor Takeaway)
-            with st.container(border=True):
-                st.markdown("#### 🎯 Investor Takeaway")
-                st.markdown("""
-                - ✅ If your risk tolerance is low, high-beta stocks may not be suitable for you.
-                - ✅ High-beta stocks may perform well in bull markets but can experience larger losses in downturns.
-                - ✅ Keep an eye on your portfolio's overall beta — it determines your total market exposure and volatility.
-                - ✅ Diversify across beta levels to match your goals and comfort with risk.
-                """)
-
             # 底部免责声明
             st.caption("Note: CAPM is a theoretical model and does not guarantee future performance.")
 
