@@ -751,8 +751,6 @@ else:
 
             # 8. 投资组合意义卡片 (What This Means for Your Portfolio)
             with st.container(border=True):
-                st.markdown("#### 🥧 What This Means for Your Portfolio")
-                st.caption("Your portfolio includes stocks with different betas. This affects how your portfolio behaves in different market conditions.")
                 st.write("")
                 c1, c2, c3 = st.columns(3)
                 with c1:
