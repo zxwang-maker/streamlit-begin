@@ -618,9 +618,9 @@ else:
             # 3) build CAPM table
             capm_df = compute_capm_table(capm_assets, rets_spy, rf_annual)
 
-        if capm_df.empty:
-            st.warning("Not enough data to estimate CAPM (need at least ~30 overlapping daily observations).")
-            st.stop()
+            if capm_df.empty:
+                st.warning("Not enough data to estimate CAPM (need at least ~30 overlapping daily observations).")
+                st.stop()
 
             st.markdown("### CAPM Results Table")
             st.dataframe(
