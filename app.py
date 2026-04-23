@@ -375,108 +375,164 @@ else:
 
         # === 4. UI 页面分发阶段 ===
         if page == "Page 1: Risk":
-            st.subheader("Portfolio Input and Risk Summary")
-            st.markdown("""
-            <style>
-.metric-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-top: 10px;
-    margin-bottom: 24px;
-}
-.metric-card {
-    background: white;
-    border: 1px solid #E5E7EB;
-    border-radius: 20px;
-    padding: 24px 28px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
-.metric-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1F2937;
-    margin-bottom: 4px;
-}
-.metric-subtitle {
-    font-size: 14px;
-    color: #6B7280;
-    margin-bottom: 18px;
-}
-.metric-value-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-.metric-value {
-    font-size: 42px;
-    font-weight: 800;
-    color: #111827;
-    line-height: 1;
-}
-.metric-badge {
-    display: inline-block;
-    padding: 6px 14px;
-    border-radius: 999px;
-    font-size: 14px;
-    font-weight: 700;
-}
-.badge-blue { background: #DBEAFE; color: #2563EB; }
-.badge-green { background: #DCFCE7; color: #16A34A; }
-.badge-purple { background: #F3E8FF; color: #9333EA; }
-.badge-orange { background: #FFEDD5; color: #EA580C; }
-
-.metric-desc {
-    font-size: 15px;
-    color: #4B5563;
-    line-height: 1.7;
-    margin-bottom: 18px;
-    border-top: 1px solid #E5E7EB;
-    padding-top: 16px;
-}
-.metric-scale {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    font-size: 14px;
-    color: #6B7280;
-}
-.metric-scale div {
-    text-align: left;
-}
-.metric-scale strong {
-    display: block;
-    color: #374151;
-    margin-bottom: 4px;
-}
-</style>
-""", unsafe_allow_html=True)
-           
-
-            # --- 全新的权重输入设计 ---
+            
+            # --- 1. 权重输入区域 (保持功能性) ---
             st.markdown("### ⚖️ Set Portfolio Weights")
             st.info(
-                "💡 **Instruction:** Enter relative weights for your tickers separated by spaces. "
-                "You don't need to make them add up to 100%—the app will automatically normalize them for you! "
-                "(e.g., `2 3 5` or `1 1 1`). Leave blank for equal weights."
+                "💡 **Instruction:** Enter relative weights separated by spaces (e.g., `2 3 5`). "
+                "The app will automatically normalize them to 100%. Leave blank for equal weights."
             )
-
             new_weight_str = st.text_input(
                 f"Enter {n} weights for [ {' | '.join(tickers)} ] :",
-                value=st.session_state["weight_input_str"],
-                placeholder="e.g. 2 3 5",
+                value=st.session_state.get("weight_input_str", ""),
                 key="weight_input_str_box"
             )
-
-
-            # ✅ 只有当用户真的改了输入，才保存并 rerun
-            if new_weight_str != st.session_state['weight_input_str']:
+            if new_weight_str != st.session_state.get('weight_input_str', ''):
                 st.session_state['weight_input_str'] = new_weight_str
-                st.rerun()  # 让下一次循环用新权重重新算
+                st.rerun()
 
+            st.write("---")
 
-          
+            # --- 2. 动态计算卡片所需的展示数据 ---
+            v_val = ann_vol * 100
+            v_pct = min(v_val / 40 * 100, 100) # 刻度条百分比位置
+            v_badge = "较高" if v_val > 20 else "偏低" if v_val < 10 else "中等"
+            
+            r_val = exp_return * 100
+            r_pct = min(max(r_val, 0) / 35 * 100, 100)
+            r_badge = "较高" if r_val > 15 else "一般" if r_val > 5 else "偏低"
+            
+            d_val = div_score
+            d_pct = min(d_val, 100)
+            d_badge = "优秀" if d_val > 80 else "良好" if d_val > 60 else "中等" if d_val > 40 else "较低"
+            
+            m_val = pred_prob * 100
+            m_pct = min(m_val, 100)
+            m_badge = "高风险" if risk_label == "High" else "中风险" if risk_label == "Medium" else "低风险"
+
+            # --- 3. 核心 CSS 样式 ---
+            custom_css = """
+            <style>
+            .overview-title { font-size: 32px; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
+            .overview-sub { font-size: 15px; color: #64748b; margin-bottom: 28px; }
+            .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+            .metric-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); display: flex; flex-direction: column;}
+            .card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+            .icon-box { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+            .card-title-en { font-size: 15px; font-weight: 700; color: #334155; }
+            .card-title-cn { font-size: 13px; color: #64748b; margin-top: 2px;}
+            .value-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+            .value-text { font-size: 34px; font-weight: 800; color: #0f172a; line-height: 1; }
+            .badge { padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+            .desc-text { font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 24px; flex-grow: 1;}
+            .scale-container { margin-top: auto; }
+            .scale-track { height: 6px; background: #f1f5f9; border-radius: 3px; position: relative; margin-bottom: 10px; }
+            .scale-fill { height: 100%; border-radius: 3px; position: absolute; left: 0; top: 0; }
+            .scale-indicator { width: 14px; height: 14px; border-radius: 50%; position: absolute; top: -4px; transform: translateX(-50%); border: 2.5px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+            .scale-labels { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; text-align: center; }
+            .scale-labels span { flex: 1; }
+            .footer-note { font-size: 13px; color: #94a3b8; text-align: left; margin-top: 10px; }
+            </style>
+            """
+            st.markdown(custom_css, unsafe_allow_html=True)
+
+            # --- 4. 生成 HTML 结构 ---
+            html_content = f"""
+            <div class="overview-title">Portfolio Overview</div>
+            <div class="overview-sub">关键指标一览，帮助您快速了解投资组合的风险与收益特征</div>
+            
+            <div class="metric-grid">
+                <div class="metric-card">
+                    <div class="card-header">
+                        <div class="icon-box" style="background: #eff6ff; color: #3b82f6;">📉</div>
+                        <div>
+                            <div class="card-title-en">Current Annualized Volatility</div>
+                            <div class="card-title-cn">当前年化波动率</div>
+                        </div>
+                    </div>
+                    <div class="value-row">
+                        <div class="value-text">{v_val:.2f}%</div>
+                        <div class="badge" style="background: #eff6ff; color: #2563eb;">{v_badge}</div>
+                    </div>
+                    <div class="desc-text">衡量投资组合的价格波动程度。{v_val:.2f}% 表明您的投资组合波动{("较为明显，收益可能有较大起伏" if v_val > 20 else "在合理范围内")}，适合相应风险承受能力的投资者。</div>
+                    <div class="scale-container">
+                        <div class="scale-track">
+                            <div class="scale-fill" style="width: {v_pct}%; background: #3b82f6;"></div>
+                            <div class="scale-indicator" style="left: {v_pct}%; background: #3b82f6;"></div>
+                        </div>
+                        <div class="scale-labels"><span>低<br>&lt;10%</span><span>中<br>10-20%</span><span>高<br>20-30%</span><span>极高<br>&gt;30%</span></div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="card-header">
+                        <div class="icon-box" style="background: #ecfdf5; color: #10b981;">📈</div>
+                        <div>
+                            <div class="card-title-en">Expected Annual Return</div>
+                            <div class="card-title-cn">预期年化收益率</div>
+                        </div>
+                    </div>
+                    <div class="value-row">
+                        <div class="value-text">{r_val:.2f}%</div>
+                        <div class="badge" style="background: #ecfdf5; color: #059669;">{r_badge}</div>
+                    </div>
+                    <div class="desc-text">基于历史数据与市场模型预测的潜在年化收益。{r_val:.2f}% 表明预期收益{r_badge}，意味着{("更高的潜在回报，但也伴随风险" if r_val > 15 else "较为稳健的回报预期")}。</div>
+                    <div class="scale-container">
+                        <div class="scale-track">
+                            <div class="scale-fill" style="width: {r_pct}%; background: #10b981;"></div>
+                            <div class="scale-indicator" style="left: {r_pct}%; background: #10b981;"></div>
+                        </div>
+                        <div class="scale-labels"><span>低<br>&lt;5%</span><span>中<br>5-15%</span><span>较高<br>15-25%</span><span>高<br>&gt;25%</span></div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="card-header">
+                        <div class="icon-box" style="background: #f5f3ff; color: #8b5cf6;">🎯</div>
+                        <div>
+                            <div class="card-title-en">Diversification Score</div>
+                            <div class="card-title-cn">多元化评分</div>
+                        </div>
+                    </div>
+                    <div class="value-row">
+                        <div class="value-text">{d_val:.1f}</div>
+                        <div class="badge" style="background: #f5f3ff; color: #7c3aed;">{d_badge}</div>
+                    </div>
+                    <div class="desc-text">反映资产在不同类别的分散程度。{d_val:.1f} 表明多元化程度{d_badge}，{("仍有优化空间，进一步分散可降低风险" if d_val < 60 else "风险分散较好，非系统性风险较低")}。</div>
+                    <div class="scale-container">
+                        <div class="scale-track">
+                            <div class="scale-fill" style="width: {d_pct}%; background: #8b5cf6;"></div>
+                            <div class="scale-indicator" style="left: {d_pct}%; background: #8b5cf6;"></div>
+                        </div>
+                        <div class="scale-labels"><span>低<br>&lt;40</span><span>中<br>40-60</span><span>良好<br>60-80</span><span>优秀<br>&gt;80</span></div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="card-header">
+                        <div class="icon-box" style="background: #fffbeb; color: #f59e0b;">🛡️</div>
+                        <div>
+                            <div class="card-title-en">ML Risk Prediction</div>
+                            <div class="card-title-cn">机器学习风险预测</div>
+                        </div>
+                    </div>
+                    <div class="value-row">
+                        <div class="value-text">{risk_label} ({m_val:.0f}%)</div>
+                        <div class="badge" style="background: #fffbeb; color: #d97706;">{m_badge}</div>
+                    </div>
+                    <div class="desc-text">基于机器学习模型对未来风险的预测。结果为“{m_badge}”，发生较大回撤的概率为 {m_val:.0f}%，建议{("重点警惕并立刻减少敞口" if risk_label == "High" else "保持关注并适当控制风险敞口")}。</div>
+                    <div class="scale-container">
+                        <div class="scale-track">
+                            <div class="scale-fill" style="width: {m_pct}%; background: #f59e0b;"></div>
+                            <div class="scale-indicator" style="left: {m_pct}%; background: #f59e0b;"></div>
+                        </div>
+                        <div class="scale-labels"><span>低<br>&lt;20%</span><span>中<br>20-50%</span><span>高<br>50-75%</span><span>极高<br>&gt;75%</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-note">提示：以上指标仅供参考，不构成投资建议。投资有风险，入市需谨慎。</div>
+            """
+            st.markdown(html_content, unsafe_allow_html=True)
 
         elif page == "Page 2: History":
        
