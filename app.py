@@ -240,6 +240,62 @@ def plot_rolling_vol(rolling_vol):
     plt.tight_layout()
     return fig
 
+def compute_capm_table(rets_assets: pd.DataFrame, rets_mkt: pd.Series, rf_annual: float):
+    """
+    rets_assets: DataFrame, columns=tickers, daily returns
+    rets_mkt: Series, SPY daily returns
+    rf_annual: annual risk-free rate (e.g., 0.04 for 4%)
+    """
+    # daily rf from annual rf
+    rf_daily = (1 + rf_annual) ** (1 / TRADING_DAYS) - 1
+
+    # align
+    idx = rets_assets.index.intersection(rets_mkt.index)
+    X = (rets_mkt.loc[idx] - rf_daily).astype(float)  # market excess
+    mkt_prem_ann = X.mean() * TRADING_DAYS            # annualized market risk premium
+
+    out = []
+    for t in rets_assets.columns:
+        y = (rets_assets.loc[idx, t] - rf_daily).astype(float)  # stock excess
+
+        # drop NA
+        df_tmp = pd.concat([X.rename("mkt_excess"), y.rename("stk_excess")], axis=1).dropna()
+        if len(df_tmp) < 30:
+            continue
+
+        x = df_tmp["mkt_excess"].values
+        yy = df_tmp["stk_excess"].values
+
+        # beta = cov/var (simple + stable)
+        beta = np.cov(yy, x, ddof=1)[0, 1] / np.var(x, ddof=1)
+
+        # alpha = mean(y) - beta*mean(x)
+        alpha_daily = yy.mean() - beta * x.mean()
+        alpha_ann = alpha_daily * TRADING_DAYS
+
+        # R^2
+        y_hat = alpha_daily + beta * x
+        ss_res = ((yy - y_hat) ** 2).sum()
+        ss_tot = ((yy - yy.mean()) ** 2).sum()
+        r2 = 1 - ss_res / ss_tot if ss_tot > 0 else np.nan
+
+        # CAPM expected return (annual)
+        exp_ret_ann = rf_annual + beta * mkt_prem_ann
+
+        out.append({
+            "Ticker": t,
+            "Beta": beta,
+            "Alpha (ann.)": alpha_ann,
+            "R^2": r2,
+            "Market Risk Premium (ann.)": mkt_prem_ann,
+            "CAPM Expected Return (ann.)": exp_ret_ann
+        })
+
+    capm_df = pd.DataFrame(out)
+    if not capm_df.empty:
+        capm_df = capm_df.sort_values("Beta", ascending=False).reset_index(drop=True)
+    return capm_df
+
 
 # -----------------------
 # Sidebar UI (干净利落，没有 weight 输入框了)
@@ -266,8 +322,9 @@ period = period_options[selected_label]
 run = st.sidebar.button("Run")
 
 page = st.sidebar.radio(
+
     "Go to page",
-    ["Page 1: Risk", "Page 2: History", "Page 3: Diversification"],
+    ["Page 1: Risk", "Page 2: History", "Page 3: Rolling Forecast", "Page 4: CAPM", "Page 5: Diversification"],
     index=0
 )
 
@@ -537,7 +594,6 @@ else:
             
         elif page == "Page 2: History":
        
-            # === 修复重点 2：这五行必须保持统一的缩进深度 ===
             st.subheader("Historical Portfolio Performance")
             st.pyplot(plot_cumulative(cum))
 
@@ -545,8 +601,56 @@ else:
             st.markdown("### 20-Day Rolling Volatility")
             st.pyplot(plot_rolling_vol(rolling_vol))
 
+        elif page == "Page 3: CAPM":
+            st.subheader("CAPM (Single-Factor) for Selected Stocks")
+            st.caption("We estimate beta using daily returns vs SPY over the selected time range.")
 
-        elif page == "Page 3: Diversification":
+            # 1) risk-free input
+            rf_pct = st.number_input(
+                "Assumed annual risk-free rate (e.g., 4 means 4%)",
+                min_value=0.0, max_value=10.0, value=4.0, step=0.25
+            )
+            rf_annual = rf_pct / 100.0
+
+            # 2) ensure we only use the tickers that really exist in rets_assets
+            capm_assets = rets_assets[tickers_used].copy()
+
+            # 3) build CAPM table
+            capm_df = compute_capm_table(capm_assets, rets_spy, rf_annual)
+
+        if capm_df.empty:
+            st.warning("Not enough data to estimate CAPM (need at least ~30 overlapping daily observations).")
+            st.stop()
+
+            st.markdown("### CAPM Results Table")
+            st.dataframe(
+                capm_df.style.format({
+                    "Beta": "{:.3f}",
+                    "Alpha (ann.)": "{:.2%}",
+                    "R^2": "{:.3f}",
+                    "Market Risk Premium (ann.)": "{:.2%}",
+                    "CAPM Expected Return (ann.)": "{:.2%}"
+                }),
+                use_container_width=True
+            )
+
+            st.markdown("### Quick Interpretation")
+            st.write(
+                "- **Beta > 1**: more sensitive than the market (higher systematic risk).\n"
+                "- **Beta < 1**: less sensitive than the market.\n"
+                "- **CAPM Expected Return** uses:  Rf + Beta × (Market Risk Premium)."
+            )
+
+        # Optional: simple bar chart for betas
+            st.markdown("### Betas (Higher = More Market Risk)")
+            fig = plt.figure(figsize=(7.5, 3.8))
+            plt.bar(capm_df["Ticker"], capm_df["Beta"])
+            plt.title("CAPM Beta by Ticker")
+            plt.tight_layout()
+            st.pyplot(fig)
+
+
+        elif page == "Page 5: Diversification":
             
             st.subheader("Portfolio Risk Explanation")
 
