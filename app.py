@@ -944,7 +944,7 @@ else:
             st.caption("Larger contribution means that stock is driving more risk.")
             st.pyplot(plot_risk_contrib(rc_df))
         
-        elif page == "Page 6: Radar Chart":
+        elif page == "Page 6: Individual Stock Performance Across Key Metrics":
 
             st.subheader("📡 Stock Risk-Return Radar Chart")
             st.caption(
