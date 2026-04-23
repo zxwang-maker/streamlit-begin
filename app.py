@@ -12,6 +12,7 @@ import matplotlib.colors as mcolors
 import traceback
 import plotly.graph_objects as go
 
+
 TRADING_DAYS = 252
 st.set_page_config(page_title="Portfolio Risk Dashboard", layout="wide")
 st.title("Portfolio Risk Dashboard")
@@ -943,113 +944,307 @@ else:
             st.pyplot(plot_risk_contrib(rc_df))
         
         elif page == "Page 6: Individual Stock Performance Across Key Metrics":
+            from datetime import date
+            # === Header ===
+            st.markdown(f"""
+            <style>
+            .radar-header {{
+                display: flex; justify-content: space-between; align-items: flex-start;
+                background: white; border: 1px solid #e2e8f0; border-radius: 16px;
+                padding: 24px 28px; margin-bottom: 24px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            }}
+            .radar-header-left {{ display: flex; align-items: center; gap: 16px; }}
+            .radar-icon {{
+                width: 48px; height: 48px; background: #eff6ff; border-radius: 12px;
+                display: flex; align-items: center; justify-content: center; font-size: 24px;
+            }}
+            .radar-title {{ font-size: 28px; font-weight: 800; color: #1e293b; margin: 0; }}
+            .radar-sub {{ font-size: 14px; color: #64748b; margin-top: 4px; }}
+            .radar-date {{
+                background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+                padding: 10px 16px; font-size: 13px; color: #475569; text-align: right;
+            }}
+            .radar-date strong {{ display: block; color: #1e293b; font-size: 14px; }}
+            </style>
+            <div class="radar-header">
+                <div class="radar-header-left">
+                    <div class="radar-icon">🛡️</div>
+                    <div>
+                        <div class="radar-title">Portfolio Risk Radar</div>
+                        <div class="radar-sub">Compare key risk-return metrics across your portfolio holdings. Higher is better for all metrics.</div>
+                    </div>
+                </div>
+                <div class="radar-date">
+                    📅 Data as of<br>
+                    <strong>{date.today().strftime("%B %d, %Y")}</strong>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-            st.subheader("📡 Stock Risk-Return Radar Chart")
-            st.caption(
-                "Each axis is normalized to [0, 1] across all selected tickers. "
-                "Higher score = better on that dimension."
-            )
-
-            # --- 计算指标 ---
+            # === Compute ===
             raw_df, norm_df = compute_radar_metrics(prices_assets[tickers_used], final_weights)
 
-            # --- 展示原始数值表格 ---
-            with st.expander("📋 Raw Metrics Table (before normalization)", expanded=False):
-                display_raw = raw_df.copy()
-                st.dataframe(
-                    display_raw.style.format({
-                        "Ann. Return":   "{:.2%}",
-                        "Max Drawdown":  "{:.2%}",
-                        "Calmar Ratio":  "{:.2f}",
-                        "Sharpe Ratio":  "{:.2f}",
-                        "CVaR (95%)":    "{:.2%}",
-                    }),
-                    use_container_width=True
-                )
-
-            # --- 雷达图 ---
+            # === Radar Chart ===
             categories = ["Ann. Return", "Max Drawdown", "Calmar Ratio", "Sharpe Ratio", "CVaR (95%)"]
-            # plotly radar 需要首尾相接
-            categories_closed = categories + [categories[0]]
-
-            # 颜色列表（与 risk_contrib 环形图保持一致风格）
-            palette = [
-                "#F3CA43", "#08277B", "#1D4ED8",
-                "#60A5FA", "#93C5FD", "#DBEAFE",
-                "#10b981", "#f59e0b", "#ef4444"
+            labels_display = [
+                "Ann. Return\n(Normalized)",
+                "Max Drawdown\n(Inverted & Normalized)",
+                "Calmar Ratio\n(Normalized)",
+                "Sharpe Ratio\n(Normalized)",
+                "CVaR (95%)\n(Inverted & Normalized)",
             ]
+            categories_closed = categories + [categories[0]]
+            labels_closed = labels_display + [labels_display[0]]
+
+            palette = ["#F3CA43", "#A5B4FC", "#60A5FA", "#10b981", "#f59e0b", "#ef4444"]
+            fill_palette = ["rgba(243,202,67,0.2)", "rgba(165,180,252,0.25)", "rgba(96,165,250,0.2)",
+                            "rgba(16,185,129,0.2)", "rgba(245,158,11,0.2)", "rgba(239,68,68,0.2)"]
 
             fig = go.Figure()
 
             for i, ticker in enumerate(norm_df.index):
                 values = norm_df.loc[ticker, categories].tolist()
                 values_closed = values + [values[0]]
-
                 fig.add_trace(go.Scatterpolar(
                     r=values_closed,
-                    theta=categories_closed,
+                    theta=labels_closed,
                     fill='toself',
                     name=ticker,
-                    line=dict(color=palette[i % len(palette)], width=2),
-                    fillcolor=palette[i % len(palette)],
-                    opacity=0.25
+                    line=dict(color=palette[i % len(palette)], width=2.5),
+                    fillcolor=fill_palette[i % len(fill_palette)],
                 ))
 
             fig.update_layout(
                 polar=dict(
-                    bgcolor="#F7F7FB",
+                    bgcolor="#F8FAFC",
                     radialaxis=dict(
-                        visible=True,
-                        range=[0, 1],
-                        tickfont=dict(size=10, color="#64748b"),
-                        gridcolor="#e2e8f0",
+                        visible=True, range=[0, 1],
+                        tickvals=[0, 0.2, 0.4, 0.6, 0.8, 1.0],
+                        tickfont=dict(size=10, color="#94a3b8"),
+                        gridcolor="#e2e8f0", linecolor="#e2e8f0",
                     ),
                     angularaxis=dict(
-                        tickfont=dict(size=12, color="#1e293b"),
-                        gridcolor="#e2e8f0",
+                        tickfont=dict(size=12, color="#334155"),
+                        gridcolor="#e2e8f0", linecolor="#cbd5e1",
                     )
                 ),
                 showlegend=True,
                 legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=-0.25,
-                    xanchor="center",
-                    x=0.5,
-                    font=dict(size=12)
+                    orientation="h", yanchor="bottom", y=-0.18,
+                    xanchor="center", x=0.5,
+                    font=dict(size=13, color="#1e293b"),
+                    bgcolor="rgba(0,0,0,0)",
                 ),
                 paper_bgcolor="#FFFFFF",
-                margin=dict(t=60, b=80, l=60, r=60),
-                height=520,
+                margin=dict(t=60, b=100, l=80, r=80),
+                height=560,
             )
 
             st.plotly_chart(fig, use_container_width=True)
 
-            # --- 解读区域 ---
-            st.markdown("### 📖 How to Read This Chart")
-            col1, col2 = st.columns(2)
+            # === Understanding the Metrics Table ===
+            st.markdown("""
+            <style>
+            .metrics-section {{
+                background: white; border: 1px solid #e2e8f0; border-radius: 16px;
+                padding: 28px; margin-bottom: 24px;
+            }}
+            .metrics-section-title {{ font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }}
+            .metrics-section-sub {{ font-size: 13px; color: #64748b; margin-bottom: 20px; }}
+            .metrics-table {{ width: 100%; border-collapse: collapse; }}
+            .metrics-table th {{
+                text-align: left; font-size: 13px; font-weight: 600; color: #64748b;
+                padding: 10px 14px; border-bottom: 1px solid #f1f5f9;
+            }}
+            .metrics-table td {{ padding: 14px; border-bottom: 1px solid #f8fafc; vertical-align: middle; }}
+            .metric-name {{ font-weight: 700; font-size: 14px; color: #1e293b; }}
+            .metric-desc {{ font-size: 13px; color: #475569; }}
+            .formula-badge {{
+                background: #f1f5f9; color: #475569; border-radius: 6px;
+                padding: 4px 10px; font-size: 12px; font-family: monospace;
+                display: inline-block; margin-left: 8px;
+            }}
+            .good-badge {{
+                background: #ecfdf5; color: #059669; border-radius: 6px;
+                padding: 4px 10px; font-size: 12px; font-weight: 600;
+            }}
+            .metric-icon {{
+                width: 36px; height: 36px; border-radius: 8px;
+                display: inline-flex; align-items: center; justify-content: center; font-size: 18px;
+            }}
+            .info-note {{
+                background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+                padding: 12px 16px; font-size: 13px; color: #64748b; margin-top: 16px;
+            }}
+            </style>
 
-            with col1:
-                st.markdown("""
-                | Axis | Meaning | Higher = |
-                |------|---------|----------|
-                | Ann. Return | 年化历史收益 | Better ✅ |
-                | Max Drawdown | 最大回撤（取反归一化）| Less drawdown ✅ |
-                | Calmar Ratio | 收益/回撤比 | Better ✅ |
-                | Sharpe Ratio | 风险调整收益 | Better ✅ |
-                | CVaR (95%) | 尾部风险（取反归一化）| Less tail loss ✅ |
-                """)
+            <div class="metrics-section">
+                <div class="metrics-section-title">📖 Understanding the Metrics</div>
+                <div class="metrics-section-sub">
+                    Each metric is normalized (0 to 1) across all holdings for fair comparison.<br>
+                    The higher the score, the stronger the risk-return profile.
+                </div>
+                <table class="metrics-table">
+                    <tr>
+                        <th>Metric</th>
+                        <th>What It Measures</th>
+                        <th>How It's Calculated</th>
+                        <th>What's Good?</th>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="metric-icon" style="background:#ecfdf5;">📈</span>
+                            <span class="metric-name" style="margin-left:8px;">Annualized Return</span>
+                        </td>
+                        <td><span class="metric-desc">The average yearly return over the selected period.</span></td>
+                        <td><span class="formula-badge">Formula</span> (Ending / Beginning Value)^(252/N) − 1</td>
+                        <td><span class="good-badge">↑ Higher the better</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="metric-icon" style="background:#fff1f2;">📉</span>
+                            <span class="metric-name" style="margin-left:8px;">Max Drawdown</span>
+                        </td>
+                        <td><span class="metric-desc">The largest peak-to-trough decline. Lower drawdown is better.</span></td>
+                        <td><span class="formula-badge">Formula</span> (Peak − Trough) / Peak &nbsp;(inverted for scoring)</td>
+                        <td><span class="good-badge">↑ Higher the better</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="metric-icon" style="background:#fffbeb;">⚖️</span>
+                            <span class="metric-name" style="margin-left:8px;">Calmar Ratio</span>
+                        </td>
+                        <td><span class="metric-desc">Measures return relative to the maximum drawdown.</span></td>
+                        <td><span class="formula-badge">Formula</span> Annualized Return / Max Drawdown</td>
+                        <td><span class="good-badge">↑ Higher the better</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="metric-icon" style="background:#f5f3ff;">📊</span>
+                            <span class="metric-name" style="margin-left:8px;">Sharpe Ratio</span>
+                        </td>
+                        <td><span class="metric-desc">Measures return per unit of volatility (risk-adjusted return).</span></td>
+                        <td><span class="formula-badge">Formula</span> (Ann. Return − Rf) / Ann. Volatility</td>
+                        <td><span class="good-badge">↑ Higher the better</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="metric-icon" style="background:#eff6ff;">🛡️</span>
+                            <span class="metric-name" style="margin-left:8px;">CVaR (95%)</span>
+                        </td>
+                        <td><span class="metric-desc">Expected average loss in the worst 5% of cases. Lower loss is better.</span></td>
+                        <td><span class="formula-badge">Formula</span> Average of worst 5% returns &nbsp;(inverted for scoring)</td>
+                        <td><span class="good-badge">↑ Higher the better</span></td>
+                    </tr>
+                </table>
+                <div class="info-note">
+                    ℹ️ All metrics are normalized for comparison. Higher normalized score = better performance.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-            with col2:
-                # 动态找出综合最优的 ticker
-                norm_df["Total Score"] = norm_df[categories].mean(axis=1)
-                best_ticker = norm_df["Total Score"].idxmax()
-                worst_ticker = norm_df["Total Score"].idxmin()
+            # === Best / Worst Cards ===
+            norm_df["Total Score"] = norm_df[categories].mean(axis=1)
+            best_ticker = norm_df["Total Score"].idxmax()
+            worst_ticker = norm_df["Total Score"].idxmin()
+            best_score = norm_df.loc[best_ticker, "Total Score"]
+            worst_score = norm_df.loc[worst_ticker, "Total Score"]
 
-                st.info(f"🏆 **Best overall:** `{best_ticker}` (avg normalized score: {norm_df.loc[best_ticker, 'Total Score']:.2f})")
-                st.warning(f"⚠️ **Weakest overall:** `{worst_ticker}` (avg normalized score: {norm_df.loc[worst_ticker, 'Total Score']:.2f})")
-                st.caption("Score is a simple average of all 5 normalized axes. Higher = stronger risk-return profile.")
+            st.markdown(f"""
+            <style>
+            .bw-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }}
+            .best-card {{
+                background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+                border: 1px solid #fde68a; border-radius: 16px; padding: 28px;
+                display: flex; align-items: flex-start; gap: 20px; position: relative; overflow: hidden;
+            }}
+            .worst-card {{
+                background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+                border: 1px solid #fed7aa; border-radius: 16px; padding: 28px;
+                display: flex; align-items: flex-start; gap: 20px; position: relative; overflow: hidden;
+            }}
+            .bw-icon {{ font-size: 36px; }}
+            .bw-label {{ font-size: 13px; font-weight: 600; color: #92400e; margin-bottom: 4px; }}
+            .bw-ticker {{ font-size: 32px; font-weight: 900; color: #1e293b; line-height: 1; }}
+            .bw-score {{ font-size: 14px; font-weight: 600; margin-top: 6px; }}
+            .bw-desc {{ font-size: 13px; color: #64748b; margin-top: 8px; line-height: 1.5; }}
+            .best-score {{ color: #d97706; }}
+            .worst-score {{ color: #ea580c; }}
+            </style>
+            <div class="bw-grid">
+                <div class="best-card">
+                    <div class="bw-icon">🏆</div>
+                    <div>
+                        <div class="bw-label">Best Overall</div>
+                        <div class="bw-ticker">{best_ticker}</div>
+                        <div class="bw-score best-score">Average Normalized Score: {best_score:.2f}</div>
+                        <div class="bw-desc">{best_ticker} has the strongest overall risk-return profile across all five metrics.</div>
+                    </div>
+                </div>
+                <div class="worst-card">
+                    <div class="bw-icon">⚠️</div>
+                    <div>
+                        <div class="bw-label">Weakest Overall</div>
+                        <div class="bw-ticker">{worst_ticker}</div>
+                        <div class="bw-score worst-score">Average Normalized Score: {worst_score:.2f}</div>
+                        <div class="bw-desc">{worst_ticker} has the weakest overall risk-return profile across all five metrics.</div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
+            # === What Do These Scores Mean ===
+            st.markdown("""
+            <style>
+            .scores-section {{ margin-bottom: 24px; }}
+            .scores-title {{ font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 16px; }}
+            .scores-grid {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }}
+            .score-card {{
+                background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+                padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            }}
+            .score-card-icon {{ font-size: 24px; margin-bottom: 10px; }}
+            .score-card-title {{ font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }}
+            .score-card-desc {{ font-size: 13px; color: #64748b; line-height: 1.5; }}
+            .footer-disclaimer {{
+                background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+                padding: 12px 18px; font-size: 13px; color: #92400e; margin-top: 8px;
+            }}
+            </style>
+
+            <div class="scores-section">
+                <div class="scores-title">What Do These Scores Mean?</div>
+                <div class="scores-grid">
+                    <div class="score-card">
+                        <div class="score-card-icon">📈</div>
+                        <div class="score-card-title">Higher Score = Better</div>
+                        <div class="score-card-desc">
+                            A higher overall score means the stock delivers better returns while taking less risk.
+                        </div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-card-icon">⚖️</div>
+                        <div class="score-card-title">Holistic Comparison</div>
+                        <div class="score-card-desc">
+                            No single metric tells the whole story. We combine all 5 normalized metrics with equal weight.
+                        </div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-card-icon">🔍</div>
+                        <div class="score-card-title">Use It Wisely</div>
+                        <div class="score-card-desc">
+                            Use this view to guide portfolio adjustments based on your risk-return goals.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-disclaimer">
+                💡 <strong>Note:</strong> Past performance does not guarantee future results.
+                Always consider your risk tolerance and investment objectives.
+            </div>
+            """, unsafe_allow_html=True)
     except Exception as e:
         st.error("Error processing inputs")
         st.code(traceback.format_exc())
