@@ -1194,57 +1194,81 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-            # === What Do These Scores Mean ===
+           # === What Do These Scores Mean ===
             st.markdown("""
             <style>
-            .scores-section {{ margin-bottom: 24px; }}
-            .scores-title {{ font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 16px; }}
-            .scores-grid {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }}
-            .score-card {{
-                background: white; border: 1px solid #e2e8f0; border-radius: 14px;
-                padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-            }}
-            .score-card-icon {{ font-size: 24px; margin-bottom: 10px; }}
-            .score-card-title {{ font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }}
-            .score-card-desc {{ font-size: 13px; color: #64748b; line-height: 1.5; }}
-            .footer-disclaimer {{
-                background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
-                padding: 12px 18px; font-size: 13px; color: #92400e; margin-top: 8px;
-            }}
+            .scores-wrapper {
+                background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+                border: 1px solid #c7d2fe;
+                border-radius: 20px;
+                padding: 28px 32px;
+                margin-bottom: 24px;
+            }
+            .scores-title {
+                font-size: 20px; font-weight: 800; color: #1e1b4b; margin-bottom: 20px;
+            }
+            .scores-grid {
+                display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0;
+            }
+            .score-card {
+                display: flex; align-items: flex-start; gap: 16px;
+                padding: 0 24px;
+                border-right: 1px solid #c7d2fe;
+            }
+            .score-card:first-child { padding-left: 0; }
+            .score-card:last-child { border-right: none; }
+            .score-icon-box {
+                width: 44px; height: 44px; border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 20px; flex-shrink: 0; margin-top: 2px;
+            }
+            .score-card-title {
+                font-size: 14px; font-weight: 700; color: #1e1b4b; margin-bottom: 6px;
+            }
+            .score-card-desc {
+                font-size: 13px; color: #4338ca; line-height: 1.6;
+            }
+            .scores-footer {
+                margin-top: 22px;
+                padding-top: 16px;
+                border-top: 1px solid #c7d2fe;
+                font-size: 13px; color: #4338ca;
+            }
+            .scores-footer strong { color: #1e1b4b; }
             </style>
 
-            <div class="scores-section">
+            <div class="scores-wrapper">
                 <div class="scores-title">What Do These Scores Mean?</div>
                 <div class="scores-grid">
                     <div class="score-card">
-                        <div class="score-card-icon">📈</div>
-                        <div class="score-card-title">Higher Score = Better</div>
-                        <div class="score-card-desc">
-                            A higher overall score means the stock delivers better returns while taking less risk.
+                        <div class="score-icon-box" style="background: #dcfce7;">📈</div>
+                        <div>
+                            <div class="score-card-title">Higher Score = Better</div>
+                            <div class="score-card-desc">A higher overall score means the stock delivers better returns while taking less risk.</div>
                         </div>
                     </div>
                     <div class="score-card">
-                        <div class="score-card-icon">⚖️</div>
-                        <div class="score-card-title">Holistic Comparison</div>
-                        <div class="score-card-desc">
-                            No single metric tells the whole story. We combine all 5 normalized metrics with equal weight.
+                        <div class="score-icon-box" style="background: #e0e7ff;">⚖️</div>
+                        <div>
+                            <div class="score-card-title">Holistic Comparison</div>
+                            <div class="score-card-desc">No single metric tells the whole story. We combine all 5 normalized metrics with equal weight.</div>
                         </div>
                     </div>
                     <div class="score-card">
-                        <div class="score-card-icon">🔍</div>
-                        <div class="score-card-title">Use It Wisely</div>
-                        <div class="score-card-desc">
-                            Use this view to guide portfolio adjustments based on your risk-return goals.
+                        <div class="score-icon-box" style="background: #ede9fe;">🔍</div>
+                        <div>
+                            <div class="score-card-title">Use It Wisely</div>
+                            <div class="score-card-desc">Use this view to guide portfolio adjustments based on your risk-return goals.</div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="footer-disclaimer">
-                💡 <strong>Note:</strong> Past performance does not guarantee future results.
-                Always consider your risk tolerance and investment objectives.
+                <div class="scores-footer">
+                    💡 <strong>Note:</strong> Past performance does not guarantee future results.
+                    Always consider your risk tolerance and investment objectives.
+                </div>
             </div>
             """, unsafe_allow_html=True)
+                    
     except Exception as e:
         st.error("Error processing inputs")
         st.code(traceback.format_exc())
