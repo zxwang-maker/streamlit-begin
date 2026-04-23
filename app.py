@@ -324,7 +324,7 @@ run = st.sidebar.button("Run")
 page = st.sidebar.radio(
 
     "Go to page",
-    ["Page 1: Risk", "Page 2: History", "Page 3: Rolling Forecast", "Page 4: CAPM", "Page 5: Diversification"],
+    ["Page 1: Risk", "Page 2: History", "Page 4: CAPM", "Page 5: Diversification"],
     index=0
 )
 
@@ -601,7 +601,7 @@ else:
             st.markdown("### 20-Day Rolling Volatility")
             st.pyplot(plot_rolling_vol(rolling_vol))
 
-        elif page == "Page 3: CAPM":
+        elif page == "Page 4: CAPM":
             st.write("✅ CAPM page loaded")
             st.subheader("CAPM (Single-Factor) for Selected Stocks")
             st.caption("We estimate beta using daily returns vs SPY over the selected time range.")
