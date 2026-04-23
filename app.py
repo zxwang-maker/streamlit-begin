@@ -10,6 +10,7 @@ import streamlit as st
 import joblib
 import matplotlib.colors as mcolors
 import traceback
+import plotly.graph_objects as go
 
 TRADING_DAYS = 252
 st.set_page_config(page_title="Portfolio Risk Dashboard", layout="wide")
@@ -602,53 +603,141 @@ else:
             st.pyplot(plot_rolling_vol(rolling_vol))
 
         elif page == "Page 4: CAPM":
-            st.write("✅ CAPM page loaded")
-            st.subheader("CAPM (Single-Factor) for Selected Stocks")
-            st.caption("We estimate beta using daily returns vs SPY over the selected time range.")
+            # 1. 顶部标题区域
+            st.title("Portfolio Risk Dashboard")
+            st.markdown("✅ <span style='color:green; font-weight:bold'>CAPM model loaded</span>", unsafe_allow_html=True)
+            st.write("---")
 
-            # 1) risk-free input
-            rf_pct = st.number_input(
-                "Assumed annual risk-free rate (e.g., 4 means 4%)",
-                min_value=0.0, max_value=10.0, value=4.0, step=0.25
-            )
-            rf_annual = rf_pct / 100.0
+            # 2. 创建容器来控制视觉顺序 (UI顺序：图表 -> 参数假设 -> 表格)
+            # 这样可以在代码逻辑上先获取参数进行计算，但在视觉上图表排在前面
+            chart_container = st.container(border=True)
+            assumptions_container = st.container(border=True)
+            table_container = st.container(border=True)
 
-            # 2) ensure we only use the tickers that really exist in rets_assets
-            capm_assets = rets_assets[tickers_used].copy()
+            # 3. 在假设容器中获取参数 (Model Assumptions)
+            with assumptions_container:
+                st.markdown("#### Model Assumptions")
+                st.caption("Set your annual risk-free rate used in CAPM calculation.")
+                # 使用列布局让输入框不要占满整行，更精致
+                col_input, _ = st.columns([1, 2])
+                with col_input:
+                    rf_pct = st.number_input(
+                        "Annual Risk-Free Rate (Rf) %",
+                        min_value=0.0, max_value=20.0, value=4.00, step=0.25, format="%.2f"
+                    )
+                rf_annual = rf_pct / 100.0
 
-            # 3) build CAPM table
-            capm_df = compute_capm_table(capm_assets, rets_spy, rf_annual)
+                # 4. 数据计算逻辑
+                capm_assets = rets_assets[tickers_used].copy()
+                capm_df = compute_capm_table(capm_assets, rets_spy, rf_annual)
 
-            if capm_df.empty:
-                st.warning("Not enough data to estimate CAPM (need at least ~30 overlapping daily observations).")
-                st.stop()
+                if capm_df.empty:
+                    st.warning("Not enough data to estimate CAPM (need at least ~30 overlapping daily observations).")
+                    st.stop()
 
-            st.markdown("### CAPM Results Table")
-            st.dataframe(
-                capm_df.style.format({
-                    "Beta": "{:.3f}",
-                    "Alpha (ann.)": "{:.2%}",
-                    "R^2": "{:.3f}",
-                    "Market Risk Premium (ann.)": "{:.2%}",
-                    "CAPM Expected Return (ann.)": "{:.2%}"
-                }),
-                use_container_width=True
-            )
+                    # 5. 在图表容器中渲染图表 (CAPM Beta by Ticker)
+                    with chart_container:
+                        col_title, col_badge = st.columns([3, 1])
+                        with col_title:
+                            st.markdown("#### CAPM Beta by Ticker ⓘ")
+                            st.caption("Beta measures a stock's sensitivity to the overall market (SPY).")
+                        with col_badge:
+                            # 模拟右上角的灰色标签
+                            st.markdown(
+                                "<div style='background-color:#F3F4F6; color:#4B5563; padding:5px 10px; border-radius:15px; font-size:12px; text-align:center; margin-top:10px;'>" +
+                                "Higher Beta = Higher Market Sensitivity" +
+                                "</div>",
+                                unsafe_allow_html=True
+                            )
+                        # Plotly 柱状图
+                        fig = go.Figure()
+                        fig.add_trace(go.Bar(
+                            x=capm_df["Ticker"],
+                            y=capm_df["Beta"],
+                            text=capm_df["Beta"].apply(lambda x: f"{x:.2f}"),
+                            textposition='outside',
+                            marker_color='#60A5FA', # 现代清爽蓝
+                            width=0.4
+                        ))
 
-            st.markdown("### Quick Interpretation")
-            st.write(
-                "- **Beta > 1**: more sensitive than the market (higher systematic risk).\n"
-                "- **Beta < 1**: less sensitive than the market.\n"
-                "- **CAPM Expected Return** uses:  Rf + Beta × (Market Risk Premium)."
-            )
+                        #添加 Beta = 1 的虚线基准线
+                        fig.add_hline(
+                            y=1.0, line_dash="dash", line_color="#9CA3AF",
+                            annotation_text="Market Average (Beta = 1)",
+                            annotation_position="top right",
+                            annotation_font_color="#6B7280"
+                        )
+                
+                        fig.update_layout(
+                            plot_bgcolor='white',
+                            margin=dict(t=40, b=20, l=20, r=20),
+                            yaxis=dict(
+                                range=[0, max(2.5, capm_df["Beta"].max() + 0.5)], 
+                                showgrid=True, gridcolor='#F3F4F6', title="Beta"
+                            ),
+                            xaxis=dict(showgrid=False),
+                            height=350
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
 
-        # Optional: simple bar chart for betas
-            st.markdown("### Betas (Higher = More Market Risk)")
-            fig = plt.figure(figsize=(7.5, 3.8))
-            plt.bar(capm_df["Ticker"], capm_df["Beta"])
-            plt.title("CAPM Beta by Ticker")
-            plt.tight_layout()
-            st.pyplot(fig)
+                    # 6. 在表格容器中渲染表格 (CAPM Results Table)
+                    with table_container:
+                        st.markdown("#### CAPM Results Table")
+                        
+                        # 定义 Pandas Styler 的上色逻辑
+                        def style_beta(v): return 'color: #2563EB; font-weight: bold;' # 蓝色
+                        def style_alpha(v): return 'color: #DC2626; font-weight: bold;' if v < 0 else 'color: #16A34A; font-weight: bold;' # 红/绿
+                        def style_return(v): return 'color: #16A34A; font-weight: bold;' # 绿色
+                        styled_df = capm_df.style.format({
+                            "Beta": "{:.3f}",
+                            "Alpha (ann.)": "{:.2%}",
+                            "R^2": "{:.3f}",
+                            "Market Risk Premium (ann.)": "{:.2%}",
+                            "CAPM Expected Return (ann.)": "{:.2%}"
+                        })\
+                        .map(style_beta, subset=['Beta'])\
+                        .map(style_alpha, subset=['Alpha (ann.)'])\
+                        .map(style_return, subset=['CAPM Expected Return (ann.)'])
+
+                        st.dataframe(styled_df, use_container_width=True, hide_index=True)
+
+                    # 7. 教学解释卡片 (How to Interpret Beta)
+                    with st.container(border=True):
+                        st.markdown("#### 💡 How to Interpret Beta (In Simple Terms)")
+                        st.write("") # 留点空隙
+                        c1, c2, c3 = st.columns(3)
+                        with c1:
+                            st.markdown("**Beta = 1**\n\nMoves with the market.\n\n<span style='color:gray; font-size:14px'>If the market moves 10%, your stock may move about 10%.</span>", unsafe_allow_html=True)
+                        with c2:
+                            st.markdown("**<span style='color:#2563EB'>Beta > 1</span>**\n\nMore volatile than the market.\n\n<span style='color:gray; font-size:14px'>Example: **Beta = 1.5**<br>If the market drops 10%, your stock may drop 15%.<br>If the market rises 10%, your stock may rise 15%.</span>", unsafe_allow_html=True)
+                        with c3:
+                            st.markdown("**<span style='color:#16A34A'>Beta < 1</span>**\n\nLess volatile than the market.\n\n<span style='color:gray; font-size:14px'>Example: **Beta = 0.7**<br>If the market drops 10%, your stock may drop 7%.<br>If the market rises 10%, your stock may rise 7%.</span>", unsafe_allow_html=True)
+
+                    # 8. 投资组合意义卡片 (What This Means for Your Portfolio)
+                    with st.container(border=True):
+                        st.markdown("#### 🥧 What This Means for Your Portfolio")
+                        st.caption("Your portfolio includes stocks with different betas. This affects how your portfolio behaves in different market conditions.")
+                        st.write("")
+                        c1, c2, c3 = st.columns(3)
+                        with c1:
+                            st.info("📈 **All High Betas (>1)**\n\nHigher potential returns, but also higher risk. This is like adding leverage.")
+                        with c2:
+                            st.warning("⚖️ **Mixed Betas (Balanced)**\n\nMore stability. Lower overall volatility in both up and down markets.")
+                        with c3:
+                            st.success("🛡️ **All Low Betas (<1)**\n\nMore defensive. Lower risk, but may also mean lower growth potential.")
+
+                    # 9. 投资者总结卡片 (Investor Takeaway)
+                    with st.container(border=True):
+                        st.markdown("#### 🎯 Investor Takeaway")
+                        st.markdown("""
+                        - ✅ If your risk tolerance is low, high-beta stocks may not be suitable for you.
+                        - ✅ High-beta stocks may perform well in bull markets but can experience larger losses in downturns.
+                        - ✅ Keep an eye on your portfolio's overall beta — it determines your total market exposure and volatility.
+                        - ✅ Diversify across beta levels to match your goals and comfort with risk.
+                        """)
+
+                    # 底部免责声明
+                    st.caption("Note: CAPM is a theoretical model and does not guarantee future performance.")
 
 
         elif page == "Page 5: Diversification":
