@@ -1504,11 +1504,6 @@ else:
             }}
             .rc-insight-title {{ font-size: 14px; font-weight: 700; color: #6d28d9; margin-bottom: 10px; }}
             .rc-insight-text {{ font-size: 13px; color: #475569; line-height: 1.6; }}
-            .rc-btn {{
-                display: inline-block; margin-top: 14px; padding: 8px 16px;
-                border: 1.5px solid #6d28d9; border-radius: 8px;
-                color: #6d28d9; font-size: 13px; font-weight: 600;
-            }}
 
             /* What Can You Do Next */
             .next-grid {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 8px; }}
@@ -1519,7 +1514,6 @@ else:
             .next-icon {{ font-size: 24px; margin-bottom: 10px; }}
             .next-title {{ font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }}
             .next-desc {{ font-size: 12px; color: #64748b; line-height: 1.5; margin-bottom: 12px; }}
-            .next-link {{ font-size: 12px; font-weight: 600; color: #6366f1; }}
 
             /* Footer */
             .d5-footer {{
@@ -1657,7 +1651,6 @@ else:
                         <b>{top_risk_asset}</b> contributes more than half of the portfolio's total risk.
                         Consider balancing your positions if you'd like a lower volatility portfolio.
                     </div>
-                    <div class="rc-btn">Explore Rebalancing Ideas</div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -1672,19 +1665,16 @@ else:
                     <div class="next-icon">🥧</div>
                     <div class="next-title">Improve Diversification</div>
                     <div class="next-desc">Consider adding assets with low correlation to reduce overall risk.</div>
-                    <div class="next-link">View Low-Correlation Ideas →</div>
                 </div>
                 <div class="next-card">
                     <div class="next-icon">🛡️</div>
                     <div class="next-title">Manage Risk Exposure</div>
                     <div class="next-desc">Adjust position sizes to balance risk across your holdings.</div>
-                    <div class="next-link">Optimize Your Portfolio →</div>
                 </div>
                 <div class="next-card">
                     <div class="next-icon">📈</div>
                     <div class="next-title">Monitor Regularly</div>
                     <div class="next-desc">Risk changes over time. Check in regularly to stay on track.</div>
-                    <div class="next-link">Set Up Risk Alerts →</div>
                 </div>
             </div>
 
