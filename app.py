@@ -593,7 +593,6 @@ else:
 
         # === 4. UI 页面分发阶段 ===
         if page == "Page 1: Risk":
-            st.markdown("## 📊 Portfolio Overview")
             # --- 1. 权重输入区域 (保持功能性) ---
             st.markdown("## ⚖️ Set Portfolio Weights")
             st.info(
@@ -1526,7 +1525,6 @@ else:
 
 
         elif page == "Page 5: Diversification":
-            st.markdown("## 🛡️ Diversification & Risk")
             from datetime import date
 
             # === 预计算所需数据 ===
