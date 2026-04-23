@@ -311,6 +311,11 @@ def plot_rolling_vol(rolling_vol):
     return fig
 
 # === 👇 注意：下面是独立的辅助函数，必须顶格写 (0 个空格缩进) 👇 ===
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import streamlit as st
+
 def rolling_forecast(prices_assets: pd.DataFrame, horizon: int = 20, lookback: int = 60):
     rets = prices_assets.pct_change().dropna()
     avg_daily_ret = rets.tail(lookback).mean()
@@ -324,38 +329,74 @@ def rolling_forecast(prices_assets: pd.DataFrame, horizon: int = 20, lookback: i
     pred_low = latest_prices * (1 + pred_ret - band)
     pred_high = latest_prices * (1 + pred_ret + band)
     
+    # 增加计算 Outlook 的逻辑
+    outlooks = []
+    for pr in pred_ret:
+        if pr > 0.02:
+            outlooks.append("Bullish")
+        elif pr < -0.02:
+            outlooks.append("Bearish")
+        else:
+            outlooks.append("Neutral")
+
     summary_df = pd.DataFrame({
-        "Current Price": latest_prices.round(2),
-        "Past 60d Avg Daily Return": avg_daily_ret.round(4),
-        "Predicted 20d Return": pred_ret.round(4),
-        "Predicted Low Price": pred_low.round(2),
-        "Predicted Base Price": pred_base.round(2),
-        "Predicted High Price": pred_high.round(2),
+        "Stock": prices_assets.columns,
+        "Current Price": latest_prices.values.round(2),
+        "Past 60D Avg Daily Return": avg_daily_ret.values,
+        "Predicted 20D Return": pred_ret.values,
+        "Predicted Low": pred_low.values.round(2),
+        "Predicted Base": pred_base.values.round(2),
+        "Predicted High": pred_high.values.round(2),
+        "Outlook": outlooks
     })
     return latest_prices, avg_daily_ret, pred_ret, pred_low, pred_base, pred_high, summary_df
 
 def plot_rolling_forecast(prices_assets: pd.DataFrame, pred_base: pd.Series, pred_low: pd.Series, pred_high: pd.Series):
-    fig = plt.figure(figsize=(9, 5))
+    fig, ax = plt.subplots(figsize=(10, 4.5))
     ticker = prices_assets.columns[0]
     hist = prices_assets[ticker].tail(120)
-    plt.plot(hist.index, hist.values, label=f"{ticker} Historical Price")
     
+    # 图表配色（贴近图1的紫色系）
+    line_color = "#7c3aed" # 紫色
+    fill_color = "#ddd6fe" # 浅紫色
+    
+    # 历史价格线
+    ax.plot(hist.index, hist.values, color=line_color, linewidth=2, label=f"Historical Price")
+    
+    # 预测数据
     future_idx = pd.date_range(start=hist.index[-1], periods=21, freq="B")[1:]
-    plt.plot(
+    
+    # 预测中位数虚线
+    ax.plot(
         [hist.index[-1], future_idx[-1]],
         [hist.iloc[-1], pred_base[ticker]],
         linestyle="--",
-        label="Base Forecast"
+        color=line_color,
+        linewidth=2,
+        label="Forecast (Base)"
     )
-    plt.fill_between(
+    
+    # 预测区间填充
+    ax.fill_between(
         [hist.index[-1], future_idx[-1]],
         [hist.iloc[-1], pred_low[ticker]],
         [hist.iloc[-1], pred_high[ticker]],
-        alpha=0.2,
+        color=fill_color,
+        alpha=0.4,
         label="Forecast Range"
     )
-    plt.title(f"Rolling Forecast for {ticker}")
-    plt.legend()
+    
+    # 极简背景与边框处理
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_color('#cbd5e1')
+    ax.spines['bottom'].set_color('#cbd5e1')
+    ax.tick_params(colors='#64748b', which='both')
+    ax.set_ylabel("Price (USD)", color='#64748b', fontsize=10, loc='top')
+    ax.grid(axis='y', linestyle='--', alpha=0.3)
+    
+    # 图例设置在上方
+    ax.legend(loc='upper left', ncol=3, frameon=False, fontsize=10)
     plt.tight_layout()
     return fig
 
@@ -1030,12 +1071,49 @@ else:
             </div>
             """, unsafe_allow_html=True)
         
-        elif page == "Page 3: Rolling Forecast":
-            st.subheader("Rolling Forecast")
-            st.caption(
-                "This page uses the past 60 trading days average return to estimate the next 20 trading days outlook."
-            )
 
+
+
+        #从这开始
+        elif page == "Page 3: Rolling Forecast":
+            # 1. 注入自定义 CSS (完全模拟图1的设计)
+            custom_css = """
+            <style>
+            .dashboard-header {font-size: 28px; font-weight: 800; color: #1e293b; margin-bottom: 5px;}
+            .dashboard-subtitle {font-size: 14px; color: #64748b; margin-bottom: 20px;}
+            
+            /* 顶部指标卡片 */
+            .metric-card {background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; height: 100%;}
+            .metric-title {font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;}
+            .metric-value {font-size: 28px; font-weight: 800; margin: 8px 0;}
+            .metric-desc {font-size: 12px; color: #94a3b8;}
+            
+            /* 颜色辅助类 */
+            .text-green {color: #22c55e;}
+            .text-red {color: #ef4444;}
+            .text-purple {color: #7c3aed;}
+            .text-dark {color: #1e293b;}
+            .bg-green-light {background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;}
+            .bg-red-light {background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;}
+            .bg-purple-light {background: #ede9fe; color: #5b21b6; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;}
+
+            /* 表格样式 */
+            .custom-table {width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;}
+            .custom-table th {background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 600; text-align: left; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;}
+            .custom-table td {padding: 12px 16px; font-size: 14px; color: #334155; border-bottom: 1px solid #f1f5f9;}
+            
+            /* 底部科普卡片 */
+            .info-card {border-radius: 8px; padding: 16px; margin-top: 10px;}
+            .info-card-green {background: #f0fdf4; border: 1px solid #bbf7d0;}
+            .info-card-red {background: #fef2f2; border: 1px solid #fecaca;}
+            .info-card-gray {background: #f8fafc; border: 1px solid #e2e8f0;}
+            .info-title {font-weight: 700; font-size: 14px; margin-bottom: 4px;}
+            .info-text {font-size: 12px; color: #64748b;}
+            </style>
+            """
+            st.markdown(custom_css, unsafe_allow_html=True)
+
+            # 获取数据
             latest_prices, avg_daily_ret, pred_ret_20d, pred_low, pred_base, pred_high, summary_df = rolling_forecast(
                 prices_assets[tickers_used], horizon=20, lookback=60
             )
@@ -1043,22 +1121,97 @@ else:
             first_ticker = tickers_used[0]
             first_pred = pred_ret_20d[first_ticker]
 
-            if first_pred > 0.05:
+            # 判断信号
+            if first_pred > 0.02:
                 signal = "Bullish"
-            elif first_pred > 0:
-                signal = "Neutral"
+                signal_color = "text-green"
+                badge_class = "bg-green-light"
+            elif first_pred < -0.02:
+                signal = "Bearish"
+                signal_color = "text-red"
+                badge_class = "bg-red-light"
             else:
-                signal = "Weak"
+                signal = "Neutral"
+                signal_color = "text-purple"
+                badge_class = "bg-purple-light"
 
+            # --- 页面头部 ---
+            st.markdown('<div class="dashboard-header">Portfolio Risk Dashboard</div>', unsafe_allow_html=True)
+            st.markdown('<div class="dashboard-subtitle"><b>Rolling Forecast</b> &nbsp;|&nbsp; We look at the past 60 trading days to estimate what might happen in the next 20 trading days.</div>', unsafe_allow_html=True)
+
+            # --- 顶部三大指标卡片 ---
             c1, c2, c3 = st.columns(3)
-            c1.metric("Forecast Horizon", "20 Trading Days")
-            c2.metric("Predicted Return (First Ticker)", f"{first_pred:.2%}")
-            c3.metric("Trend Signal", signal)
+            with c1:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-title">📅 Forecast Horizon</div>
+                    <div class="metric-value text-purple">20 Trading Days</div>
+                    <div class="metric-desc">The next 20 trading days outlook.</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with c2:
+                pred_sign = "+" if first_pred > 0 else ""
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-title">📈 Predicted Return ({first_ticker})</div>
+                    <div class="metric-value {signal_color}">{pred_sign}{first_pred:.2%}</div>
+                    <div class="metric-desc">Total estimated return for {first_ticker} over the next 20 days.</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with c3:
+                desc = "Strong upward momentum." if signal == "Bullish" else ("Downward trend expected." if signal == "Bearish" else "No strong upward or downward trend right now.")
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-title">⚡ Trend Signal</div>
+                    <div class="metric-value text-dark">{signal}</div>
+                    <div class="metric-desc">{desc} <span class="{badge_class}" style="float:right;">Moderate Confidence</span></div>
+                </div>
+                """, unsafe_allow_html=True)
 
-            st.markdown("### Forecast Summary Table")
-            st.dataframe(summary_df, use_container_width=True)
+            st.write("") # 增加一点间距
 
-            st.markdown("### Price Forecast Chart")
+            # --- 预测概览表格 (使用 HTML 构建精美表格) ---
+            st.markdown("### 📊 Forecast Summary")
+            
+            # 构建 HTML 表格内容
+            table_html = "<table class='custom-table'><thead><tr><th>Stock</th><th>Current Price</th><th>Past 60D Avg Daily Return</th><th>Predicted 20D Return</th><th>Predicted Low</th><th>Predicted Base</th><th>Predicted High</th><th>Outlook</th></tr></thead><tbody>"
+            
+            for _, row in summary_df.iterrows():
+                # 格式化百分比颜色
+                past_ret = row['Past 60D Avg Daily Return']
+                pred_ret = row['Predicted 20D Return']
+                
+                past_ret_str = f"<span class='{'text-green' if past_ret>0 else 'text-red'}'><b>{'+' if past_ret>0 else ''}{past_ret:.2%}</b></span>"
+                pred_ret_str = f"<span class='{'text-green' if pred_ret>0 else 'text-red'}'><b>{'+' if pred_ret>0 else ''}{pred_ret:.2%}</b></span>"
+                
+                outlook = row['Outlook']
+                if outlook == "Bullish":
+                    out_badge = "<span class='bg-green-light'>↗ Bullish</span>"
+                elif outlook == "Bearish":
+                    out_badge = "<span class='bg-red-light'>↘ Bearish</span>"
+                else:
+                    out_badge = "<span class='bg-purple-light'>↔ Neutral</span>"
+
+                table_html += f"""
+                <tr>
+                    <td><b>{row['Stock']}</b></td>
+                    <td>${row['Current Price']}</td>
+                    <td>{past_ret_str}</td>
+                    <td>{pred_ret_str}</td>
+                    <td>${row['Predicted Low']}</td>
+                    <td><b>${row['Predicted Base']}</b></td>
+                    <td>${row['Predicted High']}</td>
+                    <td>{out_badge}</td>
+                </tr>
+                """
+            table_html += "</tbody></table>"
+            
+            st.markdown(table_html, unsafe_allow_html=True)
+            st.info("💡 **Base price** is our best estimate based on recent trends. Low and high prices show a possible range depending on market volatility.")
+
+            # --- 图表区域 ---
+            st.markdown(f"### 📈 Price Forecast Chart ({first_ticker})")
+            st.caption("See how the stock might move in the next 20 trading days.")
             st.pyplot(
                 plot_rolling_forecast(
                     prices_assets[tickers_used],
@@ -1068,9 +1221,31 @@ else:
                 )
             )
 
-            st.markdown("### Interpretation")
-            st.write("This forecast is based on recent return momentum over the past 60 trading days.")
-
+            # --- 底部解释区 (What Do These Results Mean?) ---
+            st.markdown("### 🤔 What Do These Results Mean?")
+            ic1, ic2, ic3 = st.columns(3)
+            with ic1:
+                st.markdown("""
+                <div class="info-card info-card-green">
+                    <div class="info-title text-green">↗ Positive Forecast (e.g. +2%)</div>
+                    <div class="info-text">The stock is expected to go up. For example, +2% means a $100 stock may rise to $102.</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with ic2:
+                st.markdown("""
+                <div class="info-card info-card-red">
+                    <div class="info-title text-red">↘ Negative Forecast (e.g. -4%)</div>
+                    <div class="info-text">The stock is expected to go down. For example, -4% means a $100 stock may drop to $96.</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with ic3:
+                st.markdown("""
+                <div class="info-card info-card-gray">
+                    <div class="info-title text-purple">↔ Neutral Forecast</div>
+                    <div class="info-text">No clear direction. The price may move sideways in the short term.</div>
+                </div>
+                """, unsafe_allow_html=True)
+        
 
         elif page == "Page 4: CAPM":
             # 1. 顶部标题区域
