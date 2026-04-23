@@ -234,6 +234,62 @@ def plot_risk_contrib(rc_df):
      plt.tight_layout()
      return fig
 
+def compute_radar_metrics(prices_assets: pd.DataFrame, weights: np.ndarray, rf_annual: float = 0.04):
+    #计算雷达图所需的5个指标，按ticker分别计算（不是组合层面）返回 DataFrame，index=ticker，columns=5个指标（已归一化到0-1）
+    rets = prices_assets.pct_change().dropna()
+    rf_daily = (1 + rf_annual) ** (1 / TRADING_DAYS) - 1
+    metrics = {}
+
+    for ticker in rets.columns:
+        r = rets[ticker].dropna()
+
+        # 1. Annualized Return (过去全部数据年化)
+        ann_ret = r.mean() * TRADING_DAYS
+
+        # 2. Max Drawdown
+        cum = (1 + r).cumprod()
+        rolling_max = cum.cummax()
+        drawdown = (cum - rolling_max) / rolling_max
+        max_dd = drawdown.min()  # 负数
+
+        # 3. Calmar Ratio = 年化收益 / abs(最大回撤)
+        calmar = ann_ret / abs(max_dd) if max_dd != 0 else np.nan
+
+        # 4. Sharpe-like = (年化收益 - rf) / 年化波动率
+        ann_vol = r.std(ddof=1) * np.sqrt(TRADING_DAYS)
+        sharpe = (ann_ret - rf_annual) / ann_vol if ann_vol > 0 else np.nan
+
+        # 5. CVaR (Expected Shortfall) at 95% — 取最差5%日收益的均值（负数）
+        var_95 = np.percentile(r, 5)
+        cvar = r[r <= var_95].mean()  # 负数，越小越危险
+
+        metrics[ticker] = {
+            "Ann. Return": ann_ret,
+            "Max Drawdown": max_dd,       # 负数
+            "Calmar Ratio": calmar,
+            "Sharpe Ratio": sharpe,
+            "CVaR (95%)": cvar,           # 负数
+        }
+
+    raw_df = pd.DataFrame(metrics).T  # shape: (n_tickers, 5)
+    # --- 归一化到 [0, 1]，让雷达图可比 ---
+    # 注意：Max Drawdown 和 CVaR 是负数，越接近0越好 → 取反后再归一化
+    norm_df = raw_df.copy()
+
+    def minmax(series):
+        mn, mx = series.min(), series.max()
+        if mx == mn:
+            return pd.Series([0.5] * len(series), index=series.index)
+        return (series - mn) / (mx - mn)
+
+    norm_df["Ann. Return"]   = minmax(raw_df["Ann. Return"])
+    norm_df["Calmar Ratio"]  = minmax(raw_df["Calmar Ratio"])
+    norm_df["Sharpe Ratio"]  = minmax(raw_df["Sharpe Ratio"])
+    norm_df["Max Drawdown"]  = minmax(-raw_df["Max Drawdown"])   # 取反：回撤越小越好
+    norm_df["CVaR (95%)"]    = minmax(-raw_df["CVaR (95%)"])     # 取反：尾损越小越好
+
+    return raw_df, norm_df
+
 def plot_rolling_vol(rolling_vol):
     fig = plt.figure(figsize=(8, 4))
     plt.plot(rolling_vol.index, rolling_vol.values)
@@ -375,7 +431,7 @@ run = st.sidebar.button("Run")
 page = st.sidebar.radio(
 
     "Go to page",
-    ["Page 1: Risk", "Page 2: History", "Page 3: Rolling Forecast", "Page 4: CAPM", "Page 5: Diversification"],
+    ["Page 1: Risk", "Page 2: History", "Page 3: Rolling Forecast", "Page 4: CAPM", "Page 5: Diversification"，"Page 6: Individual Stock Performance Across Key Metrics"],
     index=0
 )
 
@@ -887,6 +943,114 @@ else:
             st.markdown("### Risk Contribution")
             st.caption("Larger contribution means that stock is driving more risk.")
             st.pyplot(plot_risk_contrib(rc_df))
+        
+        elif page == "Page 6: Radar Chart":
+
+            st.subheader("📡 Stock Risk-Return Radar Chart")
+            st.caption(
+                "Each axis is normalized to [0, 1] across all selected tickers. "
+                "Higher score = better on that dimension."
+            )
+
+            # --- 计算指标 ---
+            raw_df, norm_df = compute_radar_metrics(prices_assets[tickers_used], final_weights)
+
+            # --- 展示原始数值表格 ---
+            with st.expander("📋 Raw Metrics Table (before normalization)", expanded=False):
+                display_raw = raw_df.copy()
+                st.dataframe(
+                    display_raw.style.format({
+                        "Ann. Return":   "{:.2%}",
+                        "Max Drawdown":  "{:.2%}",
+                        "Calmar Ratio":  "{:.2f}",
+                        "Sharpe Ratio":  "{:.2f}",
+                        "CVaR (95%)":    "{:.2%}",
+                    }),
+                    use_container_width=True
+                )
+
+            # --- 雷达图 ---
+            categories = ["Ann. Return", "Max Drawdown", "Calmar Ratio", "Sharpe Ratio", "CVaR (95%)"]
+            # plotly radar 需要首尾相接
+            categories_closed = categories + [categories[0]]
+
+            # 颜色列表（与 risk_contrib 环形图保持一致风格）
+            palette = [
+                "#F3CA43", "#08277B", "#1D4ED8",
+                "#60A5FA", "#93C5FD", "#DBEAFE",
+                "#10b981", "#f59e0b", "#ef4444"
+            ]
+
+            fig = go.Figure()
+
+            for i, ticker in enumerate(norm_df.index):
+                values = norm_df.loc[ticker, categories].tolist()
+                values_closed = values + [values[0]]
+
+                fig.add_trace(go.Scatterpolar(
+                    r=values_closed,
+                    theta=categories_closed,
+                    fill='toself',
+                    name=ticker,
+                    line=dict(color=palette[i % len(palette)], width=2),
+                    fillcolor=palette[i % len(palette)],
+                    opacity=0.25
+                ))
+
+            fig.update_layout(
+                polar=dict(
+                    bgcolor="#F7F7FB",
+                    radialaxis=dict(
+                        visible=True,
+                        range=[0, 1],
+                        tickfont=dict(size=10, color="#64748b"),
+                        gridcolor="#e2e8f0",
+                    ),
+                    angularaxis=dict(
+                        tickfont=dict(size=12, color="#1e293b"),
+                        gridcolor="#e2e8f0",
+                    )
+                ),
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.25,
+                    xanchor="center",
+                    x=0.5,
+                    font=dict(size=12)
+                ),
+                paper_bgcolor="#FFFFFF",
+                margin=dict(t=60, b=80, l=60, r=60),
+                height=520,
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            # --- 解读区域 ---
+            st.markdown("### 📖 How to Read This Chart")
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("""
+                | Axis | Meaning | Higher = |
+                |------|---------|----------|
+                | Ann. Return | 年化历史收益 | Better ✅ |
+                | Max Drawdown | 最大回撤（取反归一化）| Less drawdown ✅ |
+                | Calmar Ratio | 收益/回撤比 | Better ✅ |
+                | Sharpe Ratio | 风险调整收益 | Better ✅ |
+                | CVaR (95%) | 尾部风险（取反归一化）| Less tail loss ✅ |
+                """)
+
+            with col2:
+                # 动态找出综合最优的 ticker
+                norm_df["Total Score"] = norm_df[categories].mean(axis=1)
+                best_ticker = norm_df["Total Score"].idxmax()
+                worst_ticker = norm_df["Total Score"].idxmin()
+
+                st.info(f"🏆 **Best overall:** `{best_ticker}` (avg normalized score: {norm_df.loc[best_ticker, 'Total Score']:.2f})")
+                st.warning(f"⚠️ **Weakest overall:** `{worst_ticker}` (avg normalized score: {norm_df.loc[worst_ticker, 'Total Score']:.2f})")
+                st.caption("Score is a simple average of all 5 normalized axes. Higher = stronger risk-return profile.")
 
     except Exception as e:
         st.error("Error processing inputs")
