@@ -690,5 +690,5 @@ else:
             st.pyplot(plot_risk_contrib(rc_df))
 
     except Exception as e:
-     st.error("Error processing inputs")
-    st.code(traceback.format_exc())
+        st.error("Error processing inputs")
+        st.code(traceback.format_exc())
