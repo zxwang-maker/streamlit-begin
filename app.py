@@ -964,20 +964,17 @@ else:
                     )]
                 ))
 
-            fig1 = go.Figure(
-                data=[go.Scatter(
-                    x=x_data[:1],
-                    y=y_data[:1],
-                    mode='lines',
-                    line=dict(color='#16a34a', width=2.5),
-                    fill='tozeroy',
-                    fillcolor='rgba(22,163,74,0.08)',
-                    name='Portfolio Index',
-                    hovertemplate='%{x|%b %d, %Y}<br>Index: %{y:.2f}<extra></extra>'
-                )],
-                frames=frames
-            )
-
+            fig1 = go.Figure()
+            fig1.add_trace(go.Scatter(
+                x=cum_indexed.index,
+                y=cum_indexed.values,
+                mode='lines',
+                line=dict(color='#16a34a', width=2.5),
+                fill='tozeroy',
+                fillcolor='rgba(22,163,74,0.08)',
+                name='Portfolio Index',
+                hovertemplate='%{x|%b %d, %Y}<br>Index: %{y:.2f}<extra></extra>'
+            ))
             fig1.add_annotation(
                 x=cum_indexed.index[-1], y=cum_indexed.iloc[-1],
                 text=f"  {cum_indexed.iloc[-1]:.2f}",
@@ -986,43 +983,20 @@ else:
                 bgcolor="#16a34a", borderpad=5,
                 xanchor="left"
             )
-
             fig1.update_layout(
                 plot_bgcolor='white', paper_bgcolor='white',
                 margin=dict(t=20, b=40, l=60, r=40),
                 height=340,
-                xaxis=dict(showgrid=False, tickfont=dict(size=11, color="#94a3b8"), title="",
-                        range=[x_data[0], x_data[-1]]),
+                xaxis=dict(showgrid=False, tickfont=dict(size=11, color="#94a3b8"), title=""),
                 yaxis=dict(
                     showgrid=True, gridcolor='#f1f5f9',
                     tickfont=dict(size=11, color="#94a3b8"),
-                    title=dict(text="Index", font=dict(size=12, color="#94a3b8")),
-                    range=[min(y_data)*0.98, max(y_data)*1.02]
+                    title=dict(text="Index", font=dict(size=12, color="#94a3b8"))
                 ),
                 hovermode='x unified',
                 showlegend=False,
             )
-
-            st.plotly_chart(fig1, use_container_width=True, config={
-                "displayModeBar": False,
-                "staticPlot": False
-            })
-
-            st.components.v1.html("""
-            <script>
-            var checkExist = setInterval(function() {
-                var plots = window.parent.document.querySelectorAll('.js-plotly-plot');
-                if (plots.length > 0) {
-                    clearInterval(checkExist);
-                    Plotly.animate(plots[0], null, {
-                        transition: { duration: 0 },
-                        frame: { duration: 15, redraw: false },
-                        mode: "immediate"
-                    });
-                }
-            }, 300);
-            </script>
-            """, height=0)
+            st.plotly_chart(fig1, use_container_width=True)
            
             
             st.markdown("""
@@ -1107,20 +1081,16 @@ else:
                     )]
                 ))
 
-            fig2 = go.Figure(
-                data=[go.Scatter(
-                    x=x_data2[:1],
-                    y=y_data2[:1],
-                    mode='lines',
-                    line=dict(color='#7c3aed', width=2),
-                    fill='tozeroy',
-                    fillcolor='rgba(124,58,237,0.08)',
-                    name='Rolling Vol',
-                    hovertemplate='%{x|%b %d, %Y}<br>Volatility: %{y:.2f}%<extra></extra>'
-                )],
-                frames=frames2
-            )
-
+            fig2 = go.Figure()
+            fig2.add_trace(go.Scatter(
+                x=rv.index, y=rv.values,
+                mode='lines',
+                line=dict(color='#7c3aed', width=2),
+                fill='tozeroy',
+                fillcolor='rgba(124,58,237,0.08)',
+                name='Rolling Vol',
+                hovertemplate='%{x|%b %d, %Y}<br>Volatility: %{y:.2f}%<extra></extra>'
+            ))
             fig2.add_hline(
                 y=high_threshold, line_dash="dash", line_color="#ef4444", line_width=1.5,
                 annotation_text="High Volatility", annotation_position="right",
@@ -1145,13 +1115,11 @@ else:
                 bgcolor="#7c3aed", borderpad=5,
                 xanchor="left"
             )
-
             fig2.update_layout(
                 plot_bgcolor='white', paper_bgcolor='white',
                 margin=dict(t=20, b=40, l=60, r=80),
                 height=340,
-                xaxis=dict(showgrid=False, tickfont=dict(size=11, color="#94a3b8"), title="",
-                        range=[x_data2[0], x_data2[-1]]),
+                xaxis=dict(showgrid=False, tickfont=dict(size=11, color="#94a3b8"), title=""),
                 yaxis=dict(
                     showgrid=True, gridcolor='#f1f5f9',
                     tickfont=dict(size=11, color="#94a3b8"),
@@ -1161,27 +1129,7 @@ else:
                 hovermode='x unified',
                 showlegend=False,
             )
-
-            st.plotly_chart(fig2, use_container_width=True, config={
-                "displayModeBar": False,
-                "staticPlot": False
-            })
-
-            st.components.v1.html("""
-            <script>
-            var checkExist2 = setInterval(function() {
-                var plots = window.parent.document.querySelectorAll('.js-plotly-plot');
-                if (plots.length > 1) {
-                    clearInterval(checkExist2);
-                    Plotly.animate(plots[1], null, {
-                        transition: { duration: 0 },
-                        frame: { duration: 15, redraw: false },
-                        mode: "immediate"
-                    });
-                }
-            }, 300);
-            </script>
-            """, height=0)
+            st.plotly_chart(fig2, use_container_width=True)
 
             st.markdown("""
             <script>
