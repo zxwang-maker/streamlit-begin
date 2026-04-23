@@ -876,7 +876,7 @@ else:
                 text=f"  {cum_indexed.iloc[-1]:.2f}",
                 showarrow=False,
                 font=dict(color="white", size=12, family="Arial Black"),
-                bgcolor="#16a34a", borderpad=5, borderradius=6,
+                bgcolor="#16a34a", borderpad=5,   
                 xanchor="left"
             )
             fig1.update_layout(
@@ -963,7 +963,7 @@ else:
                 text=f"  {rv.iloc[-1]:.2f}%",
                 showarrow=False,
                 font=dict(color="white", size=12),
-                bgcolor="#7c3aed", borderpad=5, borderradius=6,
+                bgcolor="#7c3aed", borderpad=5,   # 删掉 borderradius=6
                 xanchor="left"
             )
             fig2.update_layout(
