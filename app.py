@@ -431,7 +431,7 @@ run = st.sidebar.button("Run")
 page = st.sidebar.radio(
 
     "Go to page",
-    ["Page 1: Risk", "Page 2: History", "Page 3: Rolling Forecast", "Page 4: CAPM", "Page 5: Diversification"，"Page 6: Individual Stock Performance Across Key Metrics"],
+    ["Page 1: Risk", "Page 2: History", "Page 3: Rolling Forecast", "Page 4: CAPM", "Page 5: Diversification", "Page 6: Individual Stock Performance Across Key Metrics"],
     index=0
 )
 
