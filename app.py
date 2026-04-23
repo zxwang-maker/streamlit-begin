@@ -700,15 +700,54 @@ else:
 
             # 7. 教学解释卡片 (How to Interpret Beta)
             with st.container(border=True):
-                st.markdown("#### 💡 How to Interpret Beta")
-                st.write("") # 留点空隙
+                st.markdown("#### 💡 Beta Investment Strategy Guide")
+                st.write("") 
+        
                 c1, c2, c3 = st.columns(3)
+                # --- Beta = 1 Module ---
                 with c1:
-                    st.markdown("**Beta = 1**\n\nMoves with the market.\n\n<span style='color:gray; font-size:14px'>If the market moves 10%, your stock may move about 10%.</span>", unsafe_allow_html=True)
+                    st.markdown("### **Beta ≈ 1**")
+                    st.markdown("<p style='color:#6B7280; font-size:14px;'>Market Benchmark: Moves in tandem with the market</p>", unsafe_allow_html=True)
+                    st.info("""
+                    **Allocation Suggestions:**
+                    * **Risk-Averse:** 20%-40% of equity allocation
+                    * **Balanced:** 50%-70% of equity allocation
+                    * **Aggressive:** 10%-30% of equity allocation
+            
+                    ⚠️ **Note:** Absolutely avoid heavily overweighting Beta=1 assets during the early/mid-stages of a bull market, as you will miss out on excess returns (alpha).
+                    """)
+                # --- Beta > 1 Module ---
                 with c2:
-                    st.markdown("**<span style='color:#2563EB'>Beta > 1</span>**\n\nMore volatile than the market.\n\n<span style='color:gray; font-size:14px'>Example: **Beta = 1.5**<br>If the market drops 10%, your stock may drop 15%.<br>If the market rises 10%, your stock may rise 15%.</span>", unsafe_allow_html=True)
+                    st.markdown("### **<span style='color:#2563EB'>Beta > 1</span>**", unsafe_allow_html=True)
+                    st.markdown("<p style='color:#6B7280; font-size:14px;'>Offensive: More volatile than the market</p>", unsafe_allow_html=True)
+                    st.warning("""
+                    **Risk Warning:**
+                    * If your risk tolerance is low, high-beta stocks may not be suitable for you.
+                    
+                    **Characteristics:** Outperforms when the market rises, but experiences deeper drawdowns when the market falls.
+                    """)
+                # --- Beta < 1 Module ---
                 with c3:
-                    st.markdown("**<span style='color:#16A34A'>Beta < 1</span>**\n\nLess volatile than the market.\n\n<span style='color:gray; font-size:14px'>Example: **Beta = 0.7**<br>If the market drops 10%, your stock may drop 7%.<br>If the market rises 10%, your stock may rise 7%.</span>", unsafe_allow_html=True)
+                    st.markdown("### **<span style='color:#16A34A'>Beta < 1</span>**", unsafe_allow_html=True)
+                    st.markdown("<p style='color:#6B7280; font-size:14px;'>Defensive: Portfolio 'Stabilizer'</p>", unsafe_allow_html=True)
+                    
+                    st.success("""
+                    **Strategy Logic:**
+                    Low-beta stocks act as a stabilizer to hedge against the volatility of mid-to-high beta growth and cyclical stocks.
+                    
+                    * **High Valuation / High Volatility:** Increase allocation ⬆️
+                    * **Low Valuation / Early Bull Market:** Decrease allocation, shift to mid/high-beta assets ⬇️
+                    """)
+                    # --- Dynamic Output: Portfolio Diagnostic ---
+                    low_beta_count = len(capm_df[capm_df["Beta"] < 1])
+                    total_count = len(capm_df)
+                    low_beta_ratio = low_beta_count / total_count if total_count > 0 else 0
+                    st.markdown("---")
+                    st.markdown("**🔍 Portfolio Diagnostic:**")
+                    if low_beta_ratio < 0.3:
+                        st.write("📍 Your current portfolio has weak defensive capabilities. If you anticipate high market volatility or overvaluation, we **recommend increasing** your exposure to these low-beta stocks.")
+                    else:
+                        st.write("📍 You currently hold a significant amount of defensive assets. If you anticipate an upcoming bull market, we **recommend decreasing** this allocation to capture more upside potential.")
 
             # 8. 投资组合意义卡片 (What This Means for Your Portfolio)
             with st.container(border=True):
