@@ -1399,43 +1399,301 @@ else:
 
 
         elif page == "Page 5: Diversification":
-            
-            st.subheader("Portfolio Risk Explanation")
+            from datetime import date
 
-            if not rc_df.empty:
-                top_risk_asset = rc_df.iloc[0]["ticker"]
-                top_risk_pct = rc_df.iloc[0]["risk_contribution_pct_of_vol"]
+            # === 预计算所需数据 ===
+            top_risk_asset = rc_df.iloc[0]["ticker"]
+            top_risk_pct = rc_df.iloc[0]["risk_contribution_pct_of_vol"]
+            explanation = generate_correlation_explanation(corr)
 
-                st.markdown("### Interpretation")
-                st.info(
-                    f"The portfolio’s largest source of risk is **{top_risk_asset}**, "
-                    f"which contributes about **{top_risk_pct:.1f}%** of total portfolio volatility. "
-                )
-           
-            st.markdown("### Correlation Heatmap")
-            st.write(
-                    "This heatmap shows how closely the selected stocks move together. "
-                    "Higher correlation means weaker diversification."
-            )
-            
-            st.pyplot(plot_corr_heatmap(corr))
-            st.write("") 
+            div_label = "Low" if avg_corr > 0.6 else "Moderate" if avg_corr > 0.3 else "Strong"
+            div_color = "#dc2626" if avg_corr > 0.6 else "#d97706" if avg_corr > 0.3 else "#16a34a"
+            div_bg    = "#fee2e2" if avg_corr > 0.6 else "#fffbeb" if avg_corr > 0.3 else "#ecfdf5"
+            div_desc  = "There is room to improve diversification." if avg_corr > 0.3 else "Your portfolio is well diversified."
+
+            # === Header ===
+            st.markdown(f"""
+            <style>
+            .d5-header {{
+                display: flex; justify-content: space-between; align-items: flex-start;
+                margin-bottom: 24px;
+            }}
+            .d5-title {{ font-size: 30px; font-weight: 900; color: #1e293b;
+                        display: flex; align-items: center; gap: 12px; }}
+            .d5-sub {{ font-size: 14px; color: #64748b; margin-top: 6px; }}
+            .d5-daterange {{
+                background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+                padding: 10px 16px; font-size: 13px; color: #475569;
+            }}
+
+            /* Top 3-col summary bar */
+            .d5-summary {{
+                display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0;
+                background: white; border: 1px solid #e2e8f0; border-radius: 16px;
+                padding: 0; margin-bottom: 28px; overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            }}
+            .d5-sum-cell {{
+                padding: 24px 28px;
+                border-right: 1px solid #f1f5f9;
+            }}
+            .d5-sum-cell:last-child {{ border-right: none; }}
+            .d5-sum-label {{ font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px; }}
+            .d5-sum-main {{ font-size: 15px; color: #1e293b; line-height: 1.5; }}
+            .d5-sum-main b {{ color: #6366f1; }}
+            .d5-sum-value {{ font-size: 28px; font-weight: 800; line-height: 1; }}
+            .d5-sum-desc {{ font-size: 12px; color: #94a3b8; margin-top: 6px; }}
+            .d5-icon-cell {{
+                display: flex; align-items: center; gap: 16px;
+            }}
+            .d5-bulb {{
+                width: 48px; height: 48px; background: #ede9fe; border-radius: 50%;
+                display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+            }}
+
+            /* Section titles */
+            .d5-sec-title {{ font-size: 20px; font-weight: 800; color: #1e293b;
+                            margin-bottom: 4px; margin-top: 8px; }}
+            .d5-sec-sub {{ font-size: 13px; color: #64748b; margin-bottom: 16px; }}
+
+            /* Heatmap legend card */
+            .hm-legend {{
+                background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+                padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            }}
+            .hm-legend-title {{ font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 14px; }}
+            .hm-legend-item {{ display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }}
+            .hm-legend-icon {{ font-size: 20px; flex-shrink: 0; margin-top: 2px; }}
+            .hm-legend-label {{ font-size: 13px; font-weight: 700; color: #1e293b; }}
+            .hm-legend-desc {{ font-size: 12px; color: #64748b; margin-top: 2px; }}
+
+            /* Insight box */
+            .d5-insight {{
+                background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+                padding: 22px 24px; display: flex; align-items: flex-start; gap: 20px;
+                margin-top: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            }}
+            .d5-insight-avatar {{ font-size: 48px; flex-shrink: 0; }}
+            .d5-insight-title {{ font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }}
+            .d5-insight-text {{ font-size: 13px; color: #475569; line-height: 1.6; }}
+            .d5-div-badge {{
+                display: inline-block; padding: 8px 18px; border-radius: 10px;
+                font-size: 13px; font-weight: 700; margin-top: 14px;
+                border: 1px solid currentColor;
+            }}
+
+            /* Risk contribution list */
+            .rc-card {{
+                background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+                padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            }}
+            .rc-row {{
+                display: flex; align-items: center; gap: 14px;
+                padding: 12px 0; border-bottom: 1px solid #f8fafc;
+            }}
+            .rc-row:last-child {{ border-bottom: none; }}
+            .rc-dot {{ width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }}
+            .rc-name {{ font-size: 14px; font-weight: 700; color: #1e293b; }}
+            .rc-desc {{ font-size: 12px; color: #94a3b8; }}
+            .rc-pct {{ font-size: 16px; font-weight: 800; color: #1e293b; margin-left: auto; }}
+
+            /* Insight right panel */
+            .rc-insight {{
+                background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 14px;
+                padding: 20px;
+            }}
+            .rc-insight-title {{ font-size: 14px; font-weight: 700; color: #6d28d9; margin-bottom: 10px; }}
+            .rc-insight-text {{ font-size: 13px; color: #475569; line-height: 1.6; }}
+            .rc-btn {{
+                display: inline-block; margin-top: 14px; padding: 8px 16px;
+                border: 1.5px solid #6d28d9; border-radius: 8px;
+                color: #6d28d9; font-size: 13px; font-weight: 600;
+            }}
+
+            /* What Can You Do Next */
+            .next-grid {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 8px; }}
+            .next-card {{
+                background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+                padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            }}
+            .next-icon {{ font-size: 24px; margin-bottom: 10px; }}
+            .next-title {{ font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }}
+            .next-desc {{ font-size: 12px; color: #64748b; line-height: 1.5; margin-bottom: 12px; }}
+            .next-link {{ font-size: 12px; font-weight: 600; color: #6366f1; }}
+
+            /* Footer */
+            .d5-footer {{
+                background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+                padding: 12px 18px; font-size: 13px; color: #92400e; margin-top: 24px;
+            }}
+            </style>
+
+            <div class="d5-header">
+                <div>
+                    <div class="d5-title">🛡️ Portfolio Risk Dashboard</div>
+                    <div class="d5-sub">Understand how your holdings contribute to risk and how they move together.</div>
+                </div>
+                <div class="d5-daterange">📅 Data as of<br><strong>{date.today().strftime("%B %d, %Y")}</strong></div>
+            </div>
+
+            <!-- Summary Bar -->
+            <div class="d5-summary">
+                <div class="d5-sum-cell d5-icon-cell">
+                    <div class="d5-bulb">💡</div>
+                    <div>
+                        <div class="d5-sum-label">Key Takeaway</div>
+                        <div class="d5-sum-main">
+                            Your portfolio's risk is mainly driven by <b>{top_risk_asset}</b>,
+                            which contributes {top_risk_pct:.1f}% of total volatility.
+                        </div>
+                    </div>
+                </div>
+                <div class="d5-sum-cell">
+                    <div class="d5-sum-label">Diversification Level</div>
+                    <div class="d5-sum-value" style="color:{div_color};">{div_label}</div>
+                    <div class="d5-sum-desc">{div_desc}</div>
+                </div>
+                <div class="d5-sum-cell">
+                    <div class="d5-sum-label">Total Portfolio Volatility (Ann.)</div>
+                    <div class="d5-sum-value" style="color:#6366f1;">{ann_vol*100:.2f}%</div>
+                    <div class="d5-sum-desc">Based on historical data</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # === Correlation Heatmap Section ===
+            st.markdown("""
+            <div class="d5-sec-title">Correlation Heatmap</div>
+            <div class="d5-sec-sub">This shows how closely the selected stocks move together.<br>
+            Higher correlation means weaker diversification.</div>
+            """, unsafe_allow_html=True)
+
+            col_hm, col_legend = st.columns([3, 1])
+            with col_hm:
+                st.pyplot(plot_corr_heatmap(corr))
+
+            with col_legend:
+                st.markdown(f"""
+                <div class="hm-legend">
+                    <div class="hm-legend-title">How to Read This Heatmap</div>
+                    <div class="hm-legend-item">
+                        <div class="hm-legend-icon">😊</div>
+                        <div>
+                            <div class="hm-legend-label">Closer to 1 (Dark Blue)</div>
+                            <div class="hm-legend-desc">Stocks move in the same direction.<br>Less diversification benefit.</div>
+                        </div>
+                    </div>
+                    <div class="hm-legend-item">
+                        <div class="hm-legend-icon">😐</div>
+                        <div>
+                            <div class="hm-legend-label">Around 0 (Light)</div>
+                            <div class="hm-legend-desc">Stocks move independently.<br>Great for diversification.</div>
+                        </div>
+                    </div>
+                    <div class="hm-legend-item">
+                        <div class="hm-legend-icon">😟</div>
+                        <div>
+                            <div class="hm-legend-label">Closer to -1 (Yellow)</div>
+                            <div class="hm-legend-desc">Stocks move in opposite directions.<br>Strong diversification benefit.</div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # === Insight Box ===
+            st.markdown(f"""
+            <div class="d5-insight">
+                <div class="d5-insight-avatar">🧑‍💼</div>
+                <div style="flex:1;">
+                    <div class="d5-insight-title">What does this mean for you?</div>
+                    <div class="d5-insight-text">{explanation}</div>
+                    <div class="d5-div-badge" style="background:{div_bg}; color:{div_color};">
+                        ⚖️ &nbsp;{div_label} Diversification
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.write("")
             st.write("")
 
-            st.markdown("### What does this graph tell us?")
+            # === Risk Contribution Section ===
+            st.markdown("""
+            <div class="d5-sec-title">Risk Contribution</div>
+            <div class="d5-sec-sub">This shows how much each holding contributes to the portfolio's total volatility.</div>
+            """, unsafe_allow_html=True)
 
-            explanation = generate_correlation_explanation(corr)
-            st.write(explanation)
-            if avg_corr > 0.6:
-                st.error("⚠️ Low Diversification")
-            elif avg_corr > 0.3:
-                st.warning("⚖️ Moderate Diversification")
-            else:
-                st.success("✅ Strong Diversification")
-            # === 2. Risk Contribution 环形图 ===
-            st.markdown("### Risk Contribution")
-            st.caption("Larger contribution means that stock is driving more risk.")
-            st.pyplot(plot_risk_contrib(rc_df))
+            rc_colors = ["#1D4ED8", "#0B1F3B", "#F3CA43", "#60A5FA", "#10b981", "#ef4444"]
+
+            col_pie, col_list, col_ri = st.columns([2, 2, 1.5])
+
+            with col_pie:
+                st.pyplot(plot_risk_contrib(rc_df))
+
+            with col_list:
+                rc_rows_html = ""
+                for i, row in rc_df.iterrows():
+                    desc = "Main driver of portfolio risk" if row["risk_contribution_pct_of_vol"] == rc_df["risk_contribution_pct_of_vol"].max() \
+                        else "Lower risk contribution" if row["risk_contribution_pct_of_vol"] == rc_df["risk_contribution_pct_of_vol"].min() \
+                        else "Moderate risk contribution"
+                    color = rc_colors[list(rc_df.index).index(i) % len(rc_colors)]
+                    rc_rows_html += f"""
+                    <div class="rc-row">
+                        <div class="rc-dot" style="background:{color};"></div>
+                        <div>
+                            <div class="rc-name">{row['ticker']}</div>
+                            <div class="rc-desc">{desc}</div>
+                        </div>
+                        <div class="rc-pct">{row['risk_contribution_pct_of_vol']:.1f}%</div>
+                    </div>
+                    """
+                st.markdown(f'<div class="rc-card">{rc_rows_html}</div>', unsafe_allow_html=True)
+
+            with col_ri:
+                st.markdown(f"""
+                <div class="rc-insight">
+                    <div class="rc-insight-title">🎯 What Does This Mean?</div>
+                    <div class="rc-insight-text">
+                        <b>{top_risk_asset}</b> contributes more than half of the portfolio's total risk.
+                        Consider balancing your positions if you'd like a lower volatility portfolio.
+                    </div>
+                    <div class="rc-btn">Explore Rebalancing Ideas</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.write("")
+            st.write("")
+
+            # === What Can You Do Next ===
+            st.markdown('<div class="d5-sec-title">What Can You Do Next?</div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="next-grid">
+                <div class="next-card">
+                    <div class="next-icon">🥧</div>
+                    <div class="next-title">Improve Diversification</div>
+                    <div class="next-desc">Consider adding assets with low correlation to reduce overall risk.</div>
+                    <div class="next-link">View Low-Correlation Ideas →</div>
+                </div>
+                <div class="next-card">
+                    <div class="next-icon">🛡️</div>
+                    <div class="next-title">Manage Risk Exposure</div>
+                    <div class="next-desc">Adjust position sizes to balance risk across your holdings.</div>
+                    <div class="next-link">Optimize Your Portfolio →</div>
+                </div>
+                <div class="next-card">
+                    <div class="next-icon">📈</div>
+                    <div class="next-title">Monitor Regularly</div>
+                    <div class="next-desc">Risk changes over time. Check in regularly to stay on track.</div>
+                    <div class="next-link">Set Up Risk Alerts →</div>
+                </div>
+            </div>
+
+            <div class="d5-footer">
+                💡 <strong>Note:</strong> Past performance does not guarantee future results.
+                Always consider your risk tolerance and investment objectives.
+            </div>
+            """, unsafe_allow_html=True)
+           
         
         elif page == "Page 6: Individual Stock Performance Across Key Metrics":
             from datetime import date
