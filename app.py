@@ -277,18 +277,18 @@ def compute_radar_metrics(prices_assets: pd.DataFrame, weights: np.ndarray, rf_a
     norm_df = raw_df.copy()
 
 
-def minmax(series, padding=0.1):
-    mn, mx = series.min(), series.max()
-    if mx == mn:
-        return pd.Series([0.5] * len(series), index=series.index)
-    return padding + (1 - padding) * (series - mn) / (mx - mn)
-    norm_df["Ann. Return"]   = minmax(raw_df["Ann. Return"])
-    norm_df["Calmar Ratio"]  = minmax(raw_df["Calmar Ratio"])
-    norm_df["Sharpe Ratio"]  = minmax(raw_df["Sharpe Ratio"])
-    norm_df["Max Drawdown"]  = minmax(-raw_df["Max Drawdown"])   # 取反：回撤越小越好
-    norm_df["CVaR (95%)"]    = minmax(-raw_df["CVaR (95%)"])     # 取反：尾损越小越好
+    def minmax(series, padding=0.1):
+        mn, mx = series.min(), series.max()
+        if mx == mn:
+            return pd.Series([0.5] * len(series), index=series.index)
+        return padding + (1 - padding) * (series - mn) / (mx - mn)
+        norm_df["Ann. Return"]   = minmax(raw_df["Ann. Return"])
+        norm_df["Calmar Ratio"]  = minmax(raw_df["Calmar Ratio"])
+        norm_df["Sharpe Ratio"]  = minmax(raw_df["Sharpe Ratio"])
+        norm_df["Max Drawdown"]  = minmax(-raw_df["Max Drawdown"])   # 取反：回撤越小越好
+        norm_df["CVaR (95%)"]    = minmax(-raw_df["CVaR (95%)"])     # 取反：尾损越小越好
 
-    return raw_df, norm_df
+        return raw_df, norm_df
 
 def plot_rolling_vol(rolling_vol):
     fig = plt.figure(figsize=(8, 4))
