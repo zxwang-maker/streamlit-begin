@@ -700,7 +700,7 @@ else:
 
             # 7. 教学解释卡片 (How to Interpret Beta)
             with st.container(border=True):
-                st.markdown("#### 💡 How to Interpret Beta (In Simple Terms)")
+                st.markdown("#### 💡 How to Interpret Beta")
                 st.write("") # 留点空隙
                 c1, c2, c3 = st.columns(3)
                 with c1:
