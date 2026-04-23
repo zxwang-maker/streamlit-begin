@@ -1625,23 +1625,31 @@ else:
                 st.pyplot(plot_risk_contrib(rc_df))
 
             with col_list:
-                rc_rows_html = ""
-                for i, row in rc_df.iterrows():
-                    desc = "Main driver of portfolio risk" if row["risk_contribution_pct_of_vol"] == rc_df["risk_contribution_pct_of_vol"].max() \
-                        else "Lower risk contribution" if row["risk_contribution_pct_of_vol"] == rc_df["risk_contribution_pct_of_vol"].min() \
+                rc_rows_html = '<div class="rc-card">'
+                for idx, (_, row) in enumerate(rc_df.iterrows()):
+                    desc = (
+                        "Main driver of portfolio risk"
+                        if row["risk_contribution_pct_of_vol"] == rc_df["risk_contribution_pct_of_vol"].max()
+                        else "Lower risk contribution"
+                        if row["risk_contribution_pct_of_vol"] == rc_df["risk_contribution_pct_of_vol"].min()
                         else "Moderate risk contribution"
-                    color = rc_colors[list(rc_df.index).index(i) % len(rc_colors)]
-                    rc_rows_html += f"""
-                    <div class="rc-row">
-                        <div class="rc-dot" style="background:{color};"></div>
-                        <div>
-                            <div class="rc-name">{row['ticker']}</div>
-                            <div class="rc-desc">{desc}</div>
-                        </div>
-                        <div class="rc-pct">{row['risk_contribution_pct_of_vol']:.1f}%</div>
-                    </div>
-                    """
-                st.markdown(f'<div class="rc-card">{rc_rows_html}</div>', unsafe_allow_html=True)
+                    )
+                    color = rc_colors[idx % len(rc_colors)]
+                    ticker = row['ticker']
+                    pct = f"{row['risk_contribution_pct_of_vol']:.1f}%"
+
+                    rc_rows_html += (
+                        '<div class="rc-row">'
+                        f'<div class="rc-dot" style="background:{color};"></div>'
+                        '<div>'
+                        f'<div class="rc-name">{ticker}</div>'
+                        f'<div class="rc-desc">{desc}</div>'
+                        '</div>'
+                        f'<div class="rc-pct">{pct}</div>'
+                        '</div>'
+                    )
+                rc_rows_html += '</div>'
+                st.markdown(rc_rows_html, unsafe_allow_html=True)
 
             with col_ri:
                 st.markdown(f"""
