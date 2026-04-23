@@ -276,12 +276,12 @@ def compute_radar_metrics(prices_assets: pd.DataFrame, weights: np.ndarray, rf_a
     # 注意：Max Drawdown 和 CVaR 是负数，越接近0越好 → 取反后再归一化
     norm_df = raw_df.copy()
 
-    def minmax(series):
-        mn, mx = series.min(), series.max()
-        if mx == mn:
-            return pd.Series([0.5] * len(series), index=series.index)
-        return (series - mn) / (mx - mn)
 
+def minmax(series, padding=0.1):
+    mn, mx = series.min(), series.max()
+    if mx == mn:
+        return pd.Series([0.5] * len(series), index=series.index)
+    return padding + (1 - padding) * (series - mn) / (mx - mn)
     norm_df["Ann. Return"]   = minmax(raw_df["Ann. Return"])
     norm_df["Calmar Ratio"]  = minmax(raw_df["Calmar Ratio"])
     norm_df["Sharpe Ratio"]  = minmax(raw_df["Sharpe Ratio"])
