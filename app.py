@@ -978,6 +978,34 @@ else:
                 showlegend=False,
             )
             st.plotly_chart(fig1, use_container_width=True)
+            st.markdown("""
+            <script>
+            setTimeout(function() {
+                var plots = document.querySelectorAll('.js-plotly-plot');
+                if (plots[0]) {
+                    var trace = {
+                        x: plots[0].data[0].x,
+                        y: plots[0].data[0].y
+                    };
+                    var frames = [];
+                    var steps = 40;
+                    for (var i = 1; i <= steps; i++) {
+                        var end = Math.floor(trace.x.length * i / steps);
+                        frames.push({
+                            data: [{
+                                x: trace.x.slice(0, end),
+                                y: trace.y.slice(0, end)
+                            }]
+                        });
+                    }
+                    Plotly.animate(plots[0], frames, {
+                        transition: { duration: 30, easing: 'cubic-in-out' },
+                        frame: { duration: 30, redraw: false }
+                    });
+                }
+            }, 800);
+            </script>
+            """, unsafe_allow_html=True)
 
             invested = 10000
             final_value = invested * cum_indexed.iloc[-1] / 100
