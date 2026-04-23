@@ -1205,8 +1205,7 @@ else:
                 </tr>
                 """
             table_html += "</tbody></table>"
-            
-            st.markdown(table_html, unsafe_allow_html=True)
+            st.markdown(table_html, unsafe_allow_html=True)  
             st.info("💡 **Base price** is our best estimate based on recent trends. Low and high prices show a possible range depending on market volatility.")
 
             # --- 图表区域 ---
