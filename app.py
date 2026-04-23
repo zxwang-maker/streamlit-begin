@@ -241,6 +241,56 @@ def plot_rolling_vol(rolling_vol):
     plt.tight_layout()
     return fig
 
+# === 👇 注意：下面是独立的辅助函数，必须顶格写 (0 个空格缩进) 👇 ===
+def rolling_forecast(prices_assets: pd.DataFrame, horizon: int = 20, lookback: int = 60):
+    rets = prices_assets.pct_change().dropna()
+    avg_daily_ret = rets.tail(lookback).mean()
+    daily_vol = rets.tail(lookback).std()
+    latest_prices = prices_assets.iloc[-1]
+    
+    pred_ret = (1 + avg_daily_ret) ** horizon - 1
+    pred_base = latest_prices * (1 + pred_ret)
+    
+    band = daily_vol * np.sqrt(horizon)
+    pred_low = latest_prices * (1 + pred_ret - band)
+    pred_high = latest_prices * (1 + pred_ret + band)
+    
+    summary_df = pd.DataFrame({
+        "Current Price": latest_prices.round(2),
+        "Past 60d Avg Daily Return": avg_daily_ret.round(4),
+        "Predicted 20d Return": pred_ret.round(4),
+        "Predicted Low Price": pred_low.round(2),
+        "Predicted Base Price": pred_base.round(2),
+        "Predicted High Price": pred_high.round(2),
+    })
+    return latest_prices, avg_daily_ret, pred_ret, pred_low, pred_base, pred_high, summary_df
+
+def plot_rolling_forecast(prices_assets: pd.DataFrame, pred_base: pd.Series, pred_low: pd.Series, pred_high: pd.Series):
+    fig = plt.figure(figsize=(9, 5))
+    ticker = prices_assets.columns[0]
+    hist = prices_assets[ticker].tail(120)
+    plt.plot(hist.index, hist.values, label=f"{ticker} Historical Price")
+    
+    future_idx = pd.date_range(start=hist.index[-1], periods=21, freq="B")[1:]
+    plt.plot(
+        [hist.index[-1], future_idx[-1]],
+        [hist.iloc[-1], pred_base[ticker]],
+        linestyle="--",
+        label="Base Forecast"
+    )
+    plt.fill_between(
+        [hist.index[-1], future_idx[-1]],
+        [hist.iloc[-1], pred_low[ticker]],
+        [hist.iloc[-1], pred_high[ticker]],
+        alpha=0.2,
+        label="Forecast Range"
+    )
+    plt.title(f"Rolling Forecast for {ticker}")
+    plt.legend()
+    plt.tight_layout()
+    return fig
+
+#-----------------------------------------
 def compute_capm_table(rets_assets: pd.DataFrame, rets_mkt: pd.Series, rf_annual: float):
     """
     rets_assets: DataFrame, columns=tickers, daily returns
@@ -325,7 +375,7 @@ run = st.sidebar.button("Run")
 page = st.sidebar.radio(
 
     "Go to page",
-    ["Page 1: Risk", "Page 2: History", "Page 4: CAPM", "Page 5: Diversification"],
+    ["Page 1: Risk", "Page 2: History", "Page 3: Forecast", "Page 4: CAPM", "Page 5: Diversification"],
     index=0
 )
 
@@ -601,6 +651,49 @@ else:
             rolling_vol = portfolio_return.rolling(20).std() * np.sqrt(TRADING_DAYS)
             st.markdown("### 20-Day Rolling Volatility")
             st.pyplot(plot_rolling_vol(rolling_vol))
+        elif page == "Page 3: Rolling Forecast":
+
+            st.subheader("Rolling Forecast")
+
+            st.caption(
+                "This page uses the past 60 trading days average return to estimate the next 20 trading days outlook."
+            )
+
+            latest_prices, avg_daily_ret, pred_ret_20d, pred_low, pred_base, pred_high, summary_df = rolling_forecast(
+                prices_assets[tickers_used], horizon=20, lookback=60
+            )
+
+            first_ticker = tickers_used[0]
+            first_pred = pred_ret_20d[first_ticker]
+
+            if first_pred > 0.05:
+                signal = "Bullish"
+            elif first_pred > 0:
+                signal = "Neutral"
+            else:
+                signal = "Weak"
+
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Forecast Horizon", "20 Trading Days")
+            c2.metric("Predicted Return (First Ticker)", f"{first_pred:.2%}")
+            c3.metric("Trend Signal", signal)
+
+            st.markdown("### Forecast Summary Table")
+            st.dataframe(summary_df, use_container_width=True)
+
+            st.markdown("### Price Forecast Chart")
+            st.pyplot(
+                plot_rolling_forecast(
+                    prices_assets[tickers_used],
+                    pred_base,
+                    pred_low,
+                    pred_high
+                )
+            )
+
+            st.markdown("### Interpretation")
+            st.write("This forecast is based on recent return momentum over the past 60 trading days.")
+
 
         elif page == "Page 4: CAPM":
             # 1. 顶部标题区域
