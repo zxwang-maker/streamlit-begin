@@ -1001,23 +1001,28 @@ else:
                 ),
                 hovermode='x unified',
                 showlegend=False,
-                updatemenus=[dict(
-                    type="buttons", showactive=False,
-                    y=1.1, x=0.05, xanchor="left",
-                    buttons=[dict(
-                        label="▶ Play",
-                        method="animate",
-                        args=[None, dict(
-                            frame=dict(duration=30, redraw=False),
-                            transition=dict(duration=0),
-                            fromcurrent=True,
-                            mode="immediate"
-                        )]
-                    )]
-                )]
             )
 
-            st.plotly_chart(fig1, use_container_width=True)
+            st.plotly_chart(fig1, use_container_width=True, config={
+                "displayModeBar": False,
+                "staticPlot": False
+            })
+
+            st.components.v1.html("""
+            <script>
+            var checkExist = setInterval(function() {
+                var plots = window.parent.document.querySelectorAll('.js-plotly-plot');
+                if (plots.length > 0) {
+                    clearInterval(checkExist);
+                    Plotly.animate(plots[0], null, {
+                        transition: { duration: 0 },
+                        frame: { duration: 15, redraw: false },
+                        mode: "immediate"
+                    });
+                }
+            }, 300);
+            </script>
+            """, height=0)
            
             
             st.markdown("""
@@ -1155,23 +1160,28 @@ else:
                 ),
                 hovermode='x unified',
                 showlegend=False,
-                updatemenus=[dict(
-                    type="buttons", showactive=False,
-                    y=1.1, x=0.05, xanchor="left",
-                    buttons=[dict(
-                        label="▶ Play",
-                        method="animate",
-                        args=[None, dict(
-                            frame=dict(duration=30, redraw=False),
-                            transition=dict(duration=0),
-                            fromcurrent=True,
-                            mode="immediate"
-                        )]
-                    )]
-                )]
             )
 
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig2, use_container_width=True, config={
+                "displayModeBar": False,
+                "staticPlot": False
+            })
+
+            st.components.v1.html("""
+            <script>
+            var checkExist2 = setInterval(function() {
+                var plots = window.parent.document.querySelectorAll('.js-plotly-plot');
+                if (plots.length > 1) {
+                    clearInterval(checkExist2);
+                    Plotly.animate(plots[1], null, {
+                        transition: { duration: 0 },
+                        frame: { duration: 15, redraw: false },
+                        mode: "immediate"
+                    });
+                }
+            }, 300);
+            </script>
+            """, height=0)
 
             st.markdown("""
             <script>
