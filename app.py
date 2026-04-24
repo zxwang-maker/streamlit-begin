@@ -1350,7 +1350,7 @@ else:
                 """, unsafe_allow_html=True)
         
 
-        elif page == " Page 4: CAPM Analysis":
+        elif page == "Page 4: CAPM Analysis":
             st.markdown("<div style='font-size:30px; font-weight:900; color:#1e293b; margin-bottom:6px;'>📐 CAPM Analysis</div>", unsafe_allow_html=True)
             # 1. 顶部标题区域
             st.write("---")
