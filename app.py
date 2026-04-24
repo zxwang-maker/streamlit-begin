@@ -489,7 +489,7 @@ page = st.sidebar.radio(
     index=0
 )
 
-st.sidebar.markdown("<p style='font-size:20px; font-weight:700; color:#475569;'>Enter tickers and click Run.</p>", unsafe_allow_html=True)
+st.sidebar.markdown("<p style='font-size:20px; font-weight:700; color:#475569;'>Enter tickers and click Run</p>", unsafe_allow_html=True)
 
 
 # -----------------------
