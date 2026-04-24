@@ -594,7 +594,7 @@ else:
         # === 4. UI 页面分发阶段 ===
         if page == "Page 1: Risk":
             # --- 1. 权重输入区域 (保持功能性) ---
-            st.markdown("## ⚖️ Set Portfolio Weights")
+            st.markdown("<div style='font-size:30px; font-weight:900; color:#1e293b; margin-bottom:6px;'>⚖️ Set Portfolio Weights</div>", unsafe_allow_html=True)
             st.info(
                 "💡 **Instruction:** Enter relative weights separated by spaces (e.g., `2 3 5`). "
                 "The app will automatically normalize them to 100%. Leave blank for equal weights."
@@ -1213,7 +1213,7 @@ else:
         #从这开始
         elif page == "Page 3: Rolling Forecast":
 
-            st.markdown("## 📅 Rolling Forecast")
+            st.markdown("<div style='font-size:30px; font-weight:900; color:#1e293b; margin-bottom:6px;'>📅 Rolling Forecast</div>", unsafe_allow_html=True)
             st.markdown("<p style='color:#64748b; font-size:14px; margin-top:-16px;'>We look at the past 60 trading days to estimate what might happen in the next 20 trading days.</p>", unsafe_allow_html=True)
 
             # 获取数据
@@ -1351,7 +1351,7 @@ else:
         
 
         elif page == "Page 4: CAPM":
-            st.markdown("## **📐 CAPM Analysis**")
+            st.markdown("<div style='font-size:30px; font-weight:900; color:#1e293b; margin-bottom:6px;'>📐 CAPM Analysis</div>", unsafe_allow_html=True)
             # 1. 顶部标题区域
             st.write("---")
 
@@ -1801,7 +1801,7 @@ else:
            
         
         elif page == "Page 6: Individual Stock Performance Across Key Metrics":
-            st.markdown("## **📡 Individual Stock Performance Across Key Metrics**")
+            st.markdown("<div style='font-size:30px; font-weight:900; color:#1e293b; margin-bottom:6px;'>📡 Individual Stock Performance Across Key Metrics</div>", unsafe_allow_html=True)
             from datetime import date
             # === Header ===
             st.markdown(f"""
