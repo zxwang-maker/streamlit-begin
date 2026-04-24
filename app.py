@@ -1250,60 +1250,36 @@ else:
             pred_sign = "+" if first_pred > 0 else ""
 
             # === 三张卡片 ===
-            st.markdown("""
-            <style>
-            .p3-grid {
-                display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 28px;
-            }
-            .p3-card {
-                background: white; border: 1px solid #e2e8f0; border-radius: 16px;
-                padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-            }
-            .p3-card-label {
-                display: flex; align-items: center; gap: 8px;
-                font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 12px;
-            }
-            .p3-card-label-icon { font-size: 18px; }
-            .p3-card-value {
-                font-size: 28px; font-weight: 800; color: #1e293b; margin-bottom: 10px; line-height: 1.2;
-            }
-            .p3-card-desc { font-size: 13px; color: #94a3b8; line-height: 1.5; }
-            .p3-badge {
-                display: inline-flex; align-items: center; gap: 6px;
-                padding: 6px 14px; border-radius: 20px;
-                font-size: 13px; font-weight: 600; margin-top: 10px;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-
             st.markdown(f"""
-            <div class="p3-grid">
-                <div class="p3-card">
-                    <div class="p3-card-label">
-                        <span class="p3-card-label-icon">📅</span> Forecast Horizon
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-bottom:28px;">
+
+                <div style="background:white; border:1px solid #e2e8f0; border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+                    <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#475569; margin-bottom:12px;">
+                        <span style="font-size:18px;">📅</span> Forecast Horizon
                     </div>
-                    <div class="p3-card-value">20 Trading Days</div>
-                    <div class="p3-card-desc">The next 20 trading days outlook.</div>
+                    <div style="font-size:28px; font-weight:800; color:#1e293b; margin-bottom:10px;">20 Trading Days</div>
+                    <div style="font-size:13px; color:#94a3b8;">The next 20 trading days outlook.</div>
                 </div>
 
-                <div class="p3-card">
-                    <div class="p3-card-label">
-                        <span class="p3-card-label-icon">📈</span> Predicted Return ({first_ticker})
+                <div style="background:white; border:1px solid #e2e8f0; border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+                    <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#475569; margin-bottom:12px;">
+                        <span style="font-size:18px;">📈</span> Predicted Return ({first_ticker})
                     </div>
-                    <div class="p3-card-value" style="color:{signal_color};">{pred_sign}{first_pred:.2%}</div>
-                    <div class="p3-card-desc">Estimated total return over next 20 days.</div>
+                    <div style="font-size:28px; font-weight:800; margin-bottom:10px; color:{signal_color};">{pred_sign}{first_pred:.2%}</div>
+                    <div style="font-size:13px; color:#94a3b8;">Estimated total return over next 20 days.</div>
                 </div>
 
-                <div class="p3-card">
-                    <div class="p3-card-label">
-                        <span class="p3-card-label-icon">⚡</span> Trend Signal
+                <div style="background:white; border:1px solid #e2e8f0; border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+                    <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#475569; margin-bottom:12px;">
+                        <span style="font-size:18px;">⚡</span> Trend Signal
                     </div>
-                    <div class="p3-card-value" style="color:{signal_color};">{signal}</div>
-                    <div class="p3-card-desc">{signal_desc}</div>
-                    <div class="p3-badge" style="background:{badge_bg}; color:{badge_color};">
+                    <div style="font-size:28px; font-weight:800; margin-bottom:10px; color:{signal_color};">{signal}</div>
+                    <div style="font-size:13px; color:#94a3b8;">{signal_desc}</div>
+                    <div style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; margin-top:10px; background:{badge_bg}; color:{badge_color};">
                         🛡️ Moderate Confidence
                     </div>
                 </div>
+
             </div>
             """, unsafe_allow_html=True)
 
