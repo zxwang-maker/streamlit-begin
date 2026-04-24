@@ -1250,38 +1250,37 @@ else:
             pred_sign = "+" if first_pred > 0 else ""
 
             # === 三张卡片 ===
-            st.markdown(f"""
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-bottom:28px;">
+            col1, col2, col3 = st.columns(3)
 
-                <div style="background:white; border:1px solid #e2e8f0; border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
-                    <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#475569; margin-bottom:12px;">
-                        <span style="font-size:18px;">📅</span> Forecast Horizon
-                    </div>
+            with col1:
+                st.markdown(f"""
+                <div style="background:white; border:1px solid #e2e8f0; border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.03); height:100%;">
+                    <div style="font-size:13px; font-weight:700; color:#475569; margin-bottom:12px;">📅 Forecast Horizon</div>
                     <div style="font-size:28px; font-weight:800; color:#1e293b; margin-bottom:10px;">20 Trading Days</div>
                     <div style="font-size:13px; color:#94a3b8;">The next 20 trading days outlook.</div>
                 </div>
+                """, unsafe_allow_html=True)
 
-                <div style="background:white; border:1px solid #e2e8f0; border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
-                    <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#475569; margin-bottom:12px;">
-                        <span style="font-size:18px;">📈</span> Predicted Return ({first_ticker})
-                    </div>
+            with col2:
+                st.markdown(f"""
+                <div style="background:white; border:1px solid #e2e8f0; border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.03); height:100%;">
+                    <div style="font-size:13px; font-weight:700; color:#475569; margin-bottom:12px;">📈 Predicted Return ({first_ticker})</div>
                     <div style="font-size:28px; font-weight:800; margin-bottom:10px; color:{signal_color};">{pred_sign}{first_pred:.2%}</div>
                     <div style="font-size:13px; color:#94a3b8;">Estimated total return over next 20 days.</div>
                 </div>
+                """, unsafe_allow_html=True)
 
-                <div style="background:white; border:1px solid #e2e8f0; border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
-                    <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#475569; margin-bottom:12px;">
-                        <span style="font-size:18px;">⚡</span> Trend Signal
-                    </div>
+            with col3:
+                st.markdown(f"""
+                <div style="background:white; border:1px solid #e2e8f0; border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.03); height:100%;">
+                    <div style="font-size:13px; font-weight:700; color:#475569; margin-bottom:12px;">⚡ Trend Signal</div>
                     <div style="font-size:28px; font-weight:800; margin-bottom:10px; color:{signal_color};">{signal}</div>
                     <div style="font-size:13px; color:#94a3b8;">{signal_desc}</div>
-                    <div style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; margin-top:10px; background:{badge_bg}; color:{badge_color};">
+                    <div style="display:inline-block; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; margin-top:10px; background:{badge_bg}; color:{badge_color};">
                         🛡️ Moderate Confidence
                     </div>
                 </div>
-
-            </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
 
             # === Forecast Summary Table ===
             st.markdown("<h3 style='font-size:20px; font-weight:700; color:#1e293b; margin-bottom:12px;'>📊 Forecast Summary</h3>", unsafe_allow_html=True)
