@@ -1212,34 +1212,9 @@ else:
 
         #从这开始
         elif page == "Page 3: Rolling Forecast":
-            st.markdown("## 📅 Rolling Forecast")
-            st.markdown("<p style='color:#64748b; font-size:14px;'>We look at the past 60 trading days to estimate what might happen in the next 20 trading days.</p>", unsafe_allow_html=True)
-            # 1. 注入自定义 CSS (完全模拟图1的设计)
-            custom_css = """
-            <style>
-            .overview-title { font-size: 32px; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
-            .overview-sub { font-size: 15px; color: #64748b; margin-bottom: 28px; }
-            .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
-            .metric-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); display: flex; flex-direction: column;}
-            .card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-            .icon-box { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-            .card-title-en { font-size: 15px; font-weight: 700; color: #334155; }
-            .card-title-cn { font-size: 13px; color: #64748b; margin-top: 2px;}
-            .value-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-            .value-text { font-size: 34px; font-weight: 800; color: #0f172a; line-height: 1; }
-            .badge { padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
-            .desc-text { font-size: 13.5px; color: #475569; line-height: 1.6; margin-bottom: 24px; flex-grow: 1;}
-            .scale-container { margin-top: auto; }
-            .scale-track { height: 6px; background: #f1f5f9; border-radius: 3px; position: relative; margin-bottom: 10px; }
-            .scale-fill { height: 100%; border-radius: 3px; position: absolute; left: 0; top: 0; width: 0%; transition: width 1.4s cubic-bezier(0.4,0,0.2,1); }
-            .scale-indicator { width: 14px; height: 14px; border-radius: 50%; position: absolute; top: -4px; left: 0%; transform: translateX(-50%); border: 2.5px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: left 1.4s cubic-bezier(0.4,0,0.2,1); }
-            .scale-labels { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; text-align: center; }
-            .scale-labels span { flex: 1; }
-            .footer-note { font-size: 13px; color: #94a3b8; text-align: left; margin-top: 10px; }
-            </style>
-            """
 
-            st.markdown(custom_css, unsafe_allow_html=True)
+            st.markdown("<h2 style='font-size:28px; font-weight:800; color:#1e293b;'>📅 Rolling Forecast</h2>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#64748b; font-size:14px; margin-top:-16px;'>We look at the past 60 trading days to estimate what might happen in the next 20 trading days.</p>", unsafe_allow_html=True)
 
             # 获取数据
             latest_prices, avg_daily_ret, pred_ret_20d, pred_low, pred_base, pred_high, summary_df = rolling_forecast(
@@ -1252,54 +1227,91 @@ else:
             # 判断信号
             if first_pred > 0.02:
                 signal = "Bullish"
-                signal_color = "text-green"
-                badge_class = "bg-green-light"
+                signal_color = "#16a34a"
+                badge_bg = "#dcfce7"
+                badge_color = "#166534"
+                signal_icon = "📈"
+                signal_desc = "Strong upward momentum."
             elif first_pred < -0.02:
                 signal = "Bearish"
-                signal_color = "text-red"
-                badge_class = "bg-red-light"
+                signal_color = "#dc2626"
+                badge_bg = "#fee2e2"
+                badge_color = "#991b1b"
+                signal_icon = "📉"
+                signal_desc = "Downward trend expected."
             else:
                 signal = "Neutral"
-                signal_color = "text-purple"
-                badge_class = "bg-purple-light"
+                signal_color = "#7c3aed"
+                badge_bg = "#ede9fe"
+                badge_color = "#5b21b6"
+                signal_icon = "➡️"
+                signal_desc = "No strong upward or downward trend right now."
 
-    
-            # --- 顶部三大指标卡片 ---
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">📅 Forecast Horizon</div>
-                    <div class="metric-value text-purple">20 Trading Days</div>
-                    <div class="metric-desc">The next 20 trading days outlook.</div>
+            pred_sign = "+" if first_pred > 0 else ""
+
+            # === 三张卡片 ===
+            st.markdown(f"""
+            <style>
+            .p3-grid {{
+                display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 28px;
+            }}
+            .p3-card {{
+                background: white; border: 1px solid #e2e8f0; border-radius: 16px;
+                padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            }}
+            .p3-card-label {{
+                display: flex; align-items: center; gap: 8px;
+                font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 12px;
+            }}
+            .p3-card-label-icon {{
+                font-size: 18px;
+            }}
+            .p3-card-value {{
+                font-size: 28px; font-weight: 800; color: #1e293b; margin-bottom: 10px; line-height: 1.2;
+            }}
+            .p3-card-desc {{
+                font-size: 13px; color: #94a3b8; line-height: 1.5;
+            }}
+            .p3-badge {{
+                display: inline-flex; align-items: center; gap: 6px;
+                padding: 6px 14px; border-radius: 20px;
+                font-size: 13px; font-weight: 600; margin-top: 10px;
+            }}
+            </style>
+
+            <div class="p3-grid">
+                <div class="p3-card">
+                    <div class="p3-card-label">
+                        <span class="p3-card-label-icon">📅</span> Forecast Horizon
+                    </div>
+                    <div class="p3-card-value">20 Trading Days</div>
+                    <div class="p3-card-desc">The next 20 trading days outlook.</div>
                 </div>
-                """, unsafe_allow_html=True)
-            with c2:
-                pred_sign = "+" if first_pred > 0 else ""
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">📈 Predicted Return ({first_ticker})</div>
-                    <div class="metric-value {signal_color}">{pred_sign}{first_pred:.2%}</div>
-                    <div class="metric-desc">Total estimated return for {first_ticker} over the next 20 days.</div>
+
+                <div class="p3-card">
+                    <div class="p3-card-label">
+                        <span class="p3-card-label-icon">📈</span> Predicted Return ({first_ticker})
+                    </div>
+                    <div class="p3-card-value" style="color:{signal_color};">{pred_sign}{first_pred:.2%}</div>
+                    <div class="p3-card-desc">Estimated total return over next 20 days.</div>
                 </div>
-                """, unsafe_allow_html=True)
-            with c3:
-                desc = "Strong upward momentum." if signal == "Bullish" else ("Downward trend expected." if signal == "Bearish" else "No strong upward or downward trend right now.")
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">⚡ Trend Signal</div>
-                    <div class="metric-value text-dark">{signal}</div>
-                    <div class="metric-desc">{desc} <span class="{badge_class}" style="float:right;">Moderate Confidence</span></div>
+
+                <div class="p3-card">
+                    <div class="p3-card-label">
+                        <span class="p3-card-label-icon">⚡</span> Trend Signal
+                    </div>
+                    <div class="p3-card-value" style="color:{signal_color};">{signal}</div>
+                    <div class="p3-card-desc">{signal_desc}</div>
+                    <div class="p3-badge" style="background:{badge_bg}; color:{badge_color};">
+                        🛡️ Moderate Confidence
+                    </div>
                 </div>
-                """, unsafe_allow_html=True)
+            </div>
+            """, unsafe_allow_html=True)
 
-            st.write("") # 增加一点间距
+            # === Forecast Summary Table ===
+            st.markdown("<h3 style='font-size:20px; font-weight:700; color:#1e293b; margin-bottom:12px;'>📊 Forecast Summary</h3>", unsafe_allow_html=True)
 
-            # --- 预测概览表格 (使用 HTML 构建精美表格) ---
-            st.markdown("### 📊 Forecast Summary")
-            # --- 预测概览表格 ---
-
-            # 格式化 summary_df 用于显示
             display_df = summary_df.copy()
 
             def style_forecast_table(df):
@@ -1308,7 +1320,6 @@ else:
                         color = '#16a34a' if val > 0 else '#dc2626'
                         return f'color: {color}; font-weight: bold'
                     return ''
-                
                 def color_outlook(val):
                     if val == 'Bullish':
                         return 'background-color: #dcfce7; color: #166534; font-weight: bold'
@@ -1316,7 +1327,6 @@ else:
                         return 'background-color: #fee2e2; color: #991b1b; font-weight: bold'
                     else:
                         return 'background-color: #ede9fe; color: #5b21b6; font-weight: bold'
-                
                 return df.style.format({
                     "Past 60D Avg Daily Return": "{:+.2%}",
                     "Predicted 20D Return":      "{:+.2%}",
@@ -1330,40 +1340,39 @@ else:
             st.dataframe(style_forecast_table(display_df), use_container_width=True, hide_index=True)
             st.info("💡 **Base price** is our best estimate based on recent trends. Low and high prices show a possible range depending on market volatility.")
 
-            # --- 图表区域 ---
-            st.markdown(f"### 📈 Price Forecast Chart ({first_ticker})")
+            # === Price Forecast Chart ===
+            st.markdown(f"<h3 style='font-size:20px; font-weight:700; color:#1e293b; margin-bottom:4px;'>📈 Price Forecast Chart ({first_ticker})</h3>", unsafe_allow_html=True)
             st.caption("See how the stock might move in the next 20 trading days.")
             st.pyplot(
                 plot_rolling_forecast(
                     prices_assets[tickers_used],
-                    pred_base,
-                    pred_low,
-                    pred_high
+                    pred_base, pred_low, pred_high
                 )
             )
 
-            # --- 底部解释区 (What Do These Results Mean?) ---
-            st.markdown("### 🤔 What Do These Results Mean?")
+            # === What Do These Results Mean ===
+            st.markdown("<h3 style='font-size:20px; font-weight:700; color:#1e293b; margin-bottom:12px;'>🤔 What Do These Results Mean?</h3>", unsafe_allow_html=True)
+
             ic1, ic2, ic3 = st.columns(3)
             with ic1:
                 st.markdown("""
-                <div class="info-card info-card-green">
-                    <div class="info-title text-green">↗ Positive Forecast (e.g. +2%)</div>
-                    <div class="info-text">The stock is expected to go up. For example, +2% means a $100 stock may rise to $102.</div>
+                <div style='background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:18px;'>
+                    <div style='font-size:14px; font-weight:700; color:#16a34a; margin-bottom:6px;'>↗ Positive Forecast (e.g. +2%)</div>
+                    <div style='font-size:13px; color:#475569;'>The stock is expected to go up. For example, +2% means a $100 stock may rise to $102.</div>
                 </div>
                 """, unsafe_allow_html=True)
             with ic2:
                 st.markdown("""
-                <div class="info-card info-card-red">
-                    <div class="info-title text-red">↘ Negative Forecast (e.g. -4%)</div>
-                    <div class="info-text">The stock is expected to go down. For example, -4% means a $100 stock may drop to $96.</div>
+                <div style='background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:18px;'>
+                    <div style='font-size:14px; font-weight:700; color:#dc2626; margin-bottom:6px;'>↘ Negative Forecast (e.g. -4%)</div>
+                    <div style='font-size:13px; color:#475569;'>The stock is expected to go down. For example, -4% means a $100 stock may drop to $96.</div>
                 </div>
                 """, unsafe_allow_html=True)
             with ic3:
                 st.markdown("""
-                <div class="info-card info-card-gray">
-                    <div class="info-title text-purple">↔ Neutral Forecast</div>
-                    <div class="info-text">No clear direction. The price may move sideways in the short term.</div>
+                <div style='background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:18px;'>
+                    <div style='font-size:14px; font-weight:700; color:#7c3aed; margin-bottom:6px;'>↔ Neutral Forecast</div>
+                    <div style='font-size:13px; color:#475569;'>No clear direction. The price may move sideways in the short term.</div>
                 </div>
                 """, unsafe_allow_html=True)
         
