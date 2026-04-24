@@ -1213,7 +1213,7 @@ else:
         #从这开始
         elif page == "Page 3: Rolling Forecast":
 
-            st.markdown("<h2 style='font-size:28px; font-weight:800; color:#1e293b;'>📅 Rolling Forecast</h2>", unsafe_allow_html=True)
+            st.markdown("## 📅 Rolling Forecast")
             st.markdown("<p style='color:#64748b; font-size:14px; margin-top:-16px;'>We look at the past 60 trading days to estimate what might happen in the next 20 trading days.</p>", unsafe_allow_html=True)
 
             # 获取数据
@@ -1351,9 +1351,8 @@ else:
         
 
         elif page == "Page 4: CAPM":
-            st.markdown("## 📐 CAPM Analysis")
+            st.markdown("## **📐 CAPM Analysis**")
             # 1. 顶部标题区域
-            st.markdown("✅ <span style='color:green; font-weight:bold'>CAPM model loaded</span>", unsafe_allow_html=True)
             st.write("---")
 
             # 2. 创建容器来控制视觉顺序 (UI顺序：图表 -> 参数假设 -> 表格)
@@ -1802,7 +1801,7 @@ else:
            
         
         elif page == "Page 6: Individual Stock Performance Across Key Metrics":
-            st.markdown("## 📡 Individual Stock Performance Across Key Metrics")
+            st.markdown("## **📡 Individual Stock Performance Across Key Metrics**")
             from datetime import date
             # === Header ===
             st.markdown(f"""
