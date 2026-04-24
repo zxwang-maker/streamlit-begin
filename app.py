@@ -1417,7 +1417,15 @@ else:
                     y=capm_df["Beta"],
                     text=capm_df["Beta"].apply(lambda x: f"{x:.2f}"),
                     textposition='outside',
-                    marker_color=gradient_colors,
+                    marker=dict(
+                        color=capm_df["Beta"],
+                        colorscale=[
+                            [0.0, "#93C5FD"],
+                            [0.5, "#2563EB"],
+                            [1.0, "#1D4ED8"],
+                        ],
+                        showscale=False,
+                    ),
                     width=0.4
                 ))
 
