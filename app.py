@@ -1396,7 +1396,21 @@ else:
                         "</div>",
                         unsafe_allow_html=True
                     )
-                
+                # Plotly 柱状图
+                fig = go.Figure()
+
+                n = len(capm_df)
+                start_color = np.array([29, 78, 216])    
+                end_color   = np.array([147, 197, 253]) 
+
+                gradient_colors = [
+                    '#{:02x}{:02x}{:02x}'.format(
+                        int(start_color[0] + (end_color[0] - start_color[0]) * i / max(n-1, 1)),
+                        int(start_color[1] + (end_color[1] - start_color[1]) * i / max(n-1, 1)),
+                        int(start_color[2] + (end_color[2] - start_color[2]) * i / max(n-1, 1)),
+                    )
+                    for i in range(n)
+                ]
 
                 fig.add_trace(go.Bar(
                     x=capm_df["Ticker"],
