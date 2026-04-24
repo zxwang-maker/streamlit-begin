@@ -1966,7 +1966,7 @@ else:
             </style>
 
             <div class="metrics-section">
-                <div class="metrics-section-title">📖 Understanding the Metrics</div>
+                <div class="metrics-section-title" style="font-size:24px; font-weight:900; color:#1e293b;">📖 Understanding the Metrics</div>
                 <div class="metrics-section-sub">
                     Each metric is normalized (0 to 1) across all holdings for fair comparison.<br>
                     The higher the score, the stronger the risk-return profile.
