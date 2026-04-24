@@ -2024,11 +2024,9 @@ else:
                         <td><span class="good-badge">↑ Higher the better</span></td>
                     </tr>
                 </table>
-                <div class="info-note">
+                <div class="info-note" style="margin-bottom:48px;">
                     ℹ️ All metrics are normalized for comparison. Higher normalized score = better performance.
-                        
-                    
-                
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
