@@ -37,9 +37,7 @@ def build_realtime_feature_vector(rets_assets: pd.DataFrame, rets_spy: pd.Series
     X_rt = X_rt.reindex(columns=feature_cols) 
     return X_rt
 
-# -----------------------
 # UI Helpers & Fetching
-# -----------------------
 def parse_tickers(tickers_text: str):
     raw = tickers_text.replace(",", " ").split()
     tickers = [t.strip().upper() for t in raw if t.strip()]
@@ -48,7 +46,7 @@ def parse_tickers(tickers_text: str):
         if t not in seen:
             out.append(t); seen.add(t)
     return out
-
+# Parses and normalizes user-inputted portfolio weights, defaulting to equal weights if input is empty.
 def parse_weights(weights_text: str, n: int):
     if weights_text is None or weights_text.strip() == "":
         return np.ones(n) / n
@@ -61,7 +59,7 @@ def parse_weights(weights_text: str, n: int):
     if w.sum() == 0:
         raise ValueError("Sum of weights cannot be zero.")
     return w / w.sum()
-
+# Downloads and caches historical adjusted closing prices for given tickers, dropping columns with too many missing values.
 @st.cache_data(show_spinner=False)
 def fetch_prices(tickers, period="3y"):
     df = yf.download(tickers=tickers, period=period, interval="1d", auto_adjust=False, progress=False)
@@ -87,16 +85,16 @@ def compute_current_metrics(prices_assets: pd.DataFrame, weights: np.ndarray):
     corr = rets.corr()
     cov_ann = rets.cov() * TRADING_DAYS
     # --- force shapes to be correct ---
-    weights = np.asarray(weights, dtype=float).reshape(-1)   # 变成 1D
+    weights = np.asarray(weights, dtype=float).reshape(-1)   
     sigma = np.asarray(cov_ann.values, dtype=float)          # cov matrix
 
     w_vec = weights.reshape(-1, 1)                           # column vector
 
-    # sanity check (optional but recommended)
+    # sanity check
     if sigma.shape[0] != w_vec.shape[0]:
         raise ValueError(f"Dimension mismatch: sigma {sigma.shape}, weights {w_vec.shape}")
 
-    port_var = (w_vec.T @ sigma @ w_vec).item()              # 强制取单个标量
+    port_var = (w_vec.T @ sigma @ w_vec).item()              
     port_vol = float(np.sqrt(port_var))
 
     mrc = sigma @ w_vec
@@ -112,9 +110,8 @@ def compute_current_metrics(prices_assets: pd.DataFrame, weights: np.ndarray):
 
     return tickers, weights, ann_vol, corr, rc_df, cum, rets
 
-# -----------------------
+
 # Plot Functions
-# -----------------------
 def plot_cumulative(cum):
     fig = plt.figure(figsize=(8, 4))
     plt.plot(cum.index, cum.values)
@@ -138,10 +135,10 @@ def compute_history_summary(cum: pd.Series, portfolio_return: pd.Series):
 
 def plot_corr_heatmap(corr):
     fig, ax = plt.subplots(figsize=(6.5, 5.5))
-    bg_color = "#FFFFFF"  # 浅灰白背景
-    navy_color = "#08277B" # 海军蓝 (标题和字体)
-    gold_accent = '#F3CA43' # 强调金 (替换后的金色)
-    primary_blue = '#08277B' # 主色蓝\
+    bg_color = "#FFFFFF"  
+    navy_color = "#08277B" 
+    gold_accent = '#F3CA43' 
+    primary_blue = '#08277B' 
     fig.patch.set_facecolor(bg_color)
     ax.set_facecolor(bg_color)
     colors = [gold_accent, bg_color, '#08277B']
@@ -149,25 +146,21 @@ def plot_corr_heatmap(corr):
     cmap_name = 'auth_gold_navy'
     cm_auth = mcolors.LinearSegmentedColormap.from_list(cmap_name, colors, N=n_bins)
 
-    # 5. 绘制 Heatmap
+    # 5. Draw Heatmap
     cax = ax.imshow(corr.values, aspect="auto", cmap=cm_auth, vmin=-1.0, vmax=1.0)
     
-    # 6. 配置颜色的颜色条 (Colorbar)
+    # Colorbar
     cbar = fig.colorbar(cax, orientation='vertical')
-    cbar.ax.tick_params(colors='#08277B')  # 颜色条刻度用海军蓝
-    cbar.outline.set_edgecolor('#E0E0E0')   # 颜色条边框用很淡的灰色
+    cbar.ax.tick_params(colors='#08277B') 
+    cbar.outline.set_edgecolor('#E0E0E0')   
 
-    # 7. 配置坐标轴标签和字体
+    # Configure the coordinate axis labels and fonts
     ax.set_xticks(range(len(corr.columns)))
     ax.set_xticklabels(corr.columns, rotation=45, ha="right", color="#0B1F3B", fontsize=10)
     ax.set_yticks(range(len(corr.index)))
     ax.set_yticklabels(corr.index, color="#0B1F3B", fontsize=10)
-    
-    # 彭博风：移除不必要的四周黑边框
     for spine in ax.spines.values():
         spine.set_visible(False)
-
-    # 8. 标题用海军蓝加粗
     ax.set_title("Correlation Heatmap", color='#0B1F3B', fontsize=12, fontweight='bold')
     
     plt.tight_layout()
@@ -179,11 +172,9 @@ def generate_correlation_explanation(corr_matrix):
     tickers = corr_matrix.columns
     explanations = []
     
-    # 找最高相关的pair
     max_corr = 0
     max_pair = None
     
-    # 找最低相关的pair
     min_corr = 1
     min_pair = None
     
@@ -199,7 +190,7 @@ def generate_correlation_explanation(corr_matrix):
                 min_corr = val
                 min_pair = (tickers[i], tickers[j])
     
-    # 生成解释
+    # explanation generator
     text = ""
     
     if max_pair:
@@ -208,7 +199,6 @@ def generate_correlation_explanation(corr_matrix):
     if min_pair:
         text += f"In contrast, {min_pair[0]} and {min_pair[1]} behave more independently, which helps improve diversification. "
     
-    # 整体判断
     avg_corr = corr_matrix.values[np.triu_indices_from(corr_matrix.values, k=1)].mean()
     
     if avg_corr > 0.6:
@@ -219,7 +209,7 @@ def generate_correlation_explanation(corr_matrix):
         text += "Overall, your portfolio is well diversified, with assets that do not move strongly together."
     
     return text
-
+# plot dsitribution of risk contribution percentages
 def plot_risk_contrib(rc_df):
      fig, ax = plt.subplots(figsize=(7, 3.8))
      bg_color = '#F7F7FB'
@@ -231,16 +221,15 @@ def plot_risk_contrib(rc_df):
         labels=rc_df["ticker"],
         colors=colors[:len(rc_df)],
         autopct='%1.1f%%',
-        startangle=90,          # 从正上方12点钟方向开始
-        counterclock=False,     # 顺时针排列
-        pctdistance=0.75,       # 百分比数字的位置
-        textprops={'color': '#0B1F3B', 'fontweight': 'medium', 'fontsize': 11}, # 外部标签用海军蓝
-        wedgeprops={'edgecolor': bg_color, 'linewidth': 2.5, 'width': 0.45}   # 关键：width 控制环的厚度，实现环形图
+        startangle=90,          
+        counterclock=False,    
+        pctdistance=0.75,      
+        textprops={'color': '#0B1F3B', 'fontweight': 'medium', 'fontsize': 11}, 
+        wedgeprops={'edgecolor': bg_color, 'linewidth': 2.5, 'width': 0.45}   
         )
      for i, autotext in enumerate(autotexts):
         autotext.set_weight('bold')
         autotext.set_fontsize(10)
-        # 金色(0)和浅蓝(3,4,5)背景用海军蓝字，深蓝(1,2)背景用背景色亮字
         if i == 0 or i >= 3:
             autotext.set_color('#0B1F3B') 
         else:
@@ -248,9 +237,9 @@ def plot_risk_contrib(rc_df):
             
      plt.tight_layout()
      return fig
-
+# Calculate the 5 indicators required for the radar chart, calculate them separately by ticker
 def compute_radar_metrics(prices_assets: pd.DataFrame, weights: np.ndarray, rf_annual: float = 0.04):
-    #计算雷达图所需的5个指标，按ticker分别计算（不是组合层面）返回 DataFrame，index=ticker，columns=5个指标（已归一化到0-1）
+    
     rets = prices_assets.pct_change().dropna()
     rf_daily = (1 + rf_annual) ** (1 / TRADING_DAYS) - 1
     metrics = {}
@@ -258,37 +247,36 @@ def compute_radar_metrics(prices_assets: pd.DataFrame, weights: np.ndarray, rf_a
     for ticker in rets.columns:
         r = rets[ticker].dropna()
 
-        # 1. Annualized Return (过去全部数据年化)
+        # Annualized Return
         ann_ret = r.mean() * TRADING_DAYS
 
-        # 2. Max Drawdown
+        # Max Drawdown
         cum = (1 + r).cumprod()
         rolling_max = cum.cummax()
         drawdown = (cum - rolling_max) / rolling_max
-        max_dd = drawdown.min()  # 负数
+        max_dd = drawdown.min()  
 
-        # 3. Calmar Ratio = 年化收益 / abs(最大回撤)
+        # 3. Calmar Ratio = Annualized return/abs
         calmar = ann_ret / abs(max_dd) if max_dd != 0 else np.nan
 
-        # 4. Sharpe-like = (年化收益 - rf) / 年化波动率
+        # 4. Sharpe-like = (Annualized return - rf)/Annualized volatility
         ann_vol = r.std(ddof=1) * np.sqrt(TRADING_DAYS)
         sharpe = (ann_ret - rf_annual) / ann_vol if ann_vol > 0 else np.nan
 
-        # 5. CVaR (Expected Shortfall) at 95% — 取最差5%日收益的均值（负数）
+        # 5. CVaR (Expected Shortfall) at 95% — the average of the worst 5% of daily returns (negative)
         var_95 = np.percentile(r, 5)
-        cvar = r[r <= var_95].mean()  # 负数，越小越危险
+        cvar = r[r <= var_95].mean()  
 
         metrics[ticker] = {
             "Ann. Return": ann_ret,
-            "Max Drawdown": max_dd,       # 负数
+            "Max Drawdown": max_dd,       
             "Calmar Ratio": calmar,
             "Sharpe Ratio": sharpe,
-            "CVaR (95%)": cvar,           # 负数
+            "CVaR (95%)": cvar,           
         }
 
     raw_df = pd.DataFrame(metrics).T  # shape: (n_tickers, 5)
-    # --- 归一化到 [0, 1]，让雷达图可比 ---
-    # 注意：Max Drawdown 和 CVaR 是负数，越接近0越好 → 取反后再归一化
+    # normalization
     norm_df = raw_df.copy()
     def minmax(series, padding=0.1):
         mn, mx = series.min(), series.max()
@@ -298,8 +286,8 @@ def compute_radar_metrics(prices_assets: pd.DataFrame, weights: np.ndarray, rf_a
     norm_df["Ann. Return"]   = minmax(raw_df["Ann. Return"])
     norm_df["Calmar Ratio"]  = minmax(raw_df["Calmar Ratio"])
     norm_df["Sharpe Ratio"]  = minmax(raw_df["Sharpe Ratio"])
-    norm_df["Max Drawdown"]  = minmax(-raw_df["Max Drawdown"])   # 取反：回撤越小越好
-    norm_df["CVaR (95%)"]    = minmax(-raw_df["CVaR (95%)"])     # 取反：尾损越小越好
+    norm_df["Max Drawdown"]  = minmax(-raw_df["Max Drawdown"])   
+    norm_df["CVaR (95%)"]    = minmax(-raw_df["CVaR (95%)"])    
 
     return raw_df, norm_df
 
@@ -309,8 +297,6 @@ def plot_rolling_vol(rolling_vol):
     plt.title("20-Day Rolling Volatility")
     plt.tight_layout()
     return fig
-
-# === 👇 注意：下面是独立的辅助函数，必须顶格写 (0 个空格缩进) 👇 ===
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -329,7 +315,7 @@ def rolling_forecast(prices_assets: pd.DataFrame, horizon: int = 20, lookback: i
     pred_low = latest_prices * (1 + pred_ret - band)
     pred_high = latest_prices * (1 + pred_ret + band)
     
-    # 增加计算 Outlook 的逻辑
+    # calculate logic of outlook
     outlooks = []
     for pr in pred_ret:
         if pr > 0.02:
@@ -350,23 +336,19 @@ def rolling_forecast(prices_assets: pd.DataFrame, horizon: int = 20, lookback: i
         "Outlook": outlooks
     })
     return latest_prices, avg_daily_ret, pred_ret, pred_low, pred_base, pred_high, summary_df
-
+# Draw a chart of future forecast ranges
 def plot_rolling_forecast(prices_assets: pd.DataFrame, pred_base: pd.Series, pred_low: pd.Series, pred_high: pd.Series):
     fig, ax = plt.subplots(figsize=(10, 4.5))
     ticker = prices_assets.columns[0]
     hist = prices_assets[ticker].tail(120)
     
-    # 图表配色（贴近图1的紫色系）
-    line_color = "#7c3aed" # 紫色
-    fill_color = "#ddd6fe" # 浅紫色
-    
-    # 历史价格线
+    line_color = "#7c3aed" 
+    fill_color = "#ddd6fe" 
+
     ax.plot(hist.index, hist.values, color=line_color, linewidth=2, label=f"Historical Price")
     
-    # 预测数据
     future_idx = pd.date_range(start=hist.index[-1], periods=21, freq="B")[1:]
     
-    # 预测中位数虚线
     ax.plot(
         [hist.index[-1], future_idx[-1]],
         [hist.iloc[-1], pred_base[ticker]],
@@ -376,7 +358,6 @@ def plot_rolling_forecast(prices_assets: pd.DataFrame, pred_base: pd.Series, pre
         label="Forecast (Base)"
     )
     
-    # 预测区间填充
     ax.fill_between(
         [hist.index[-1], future_idx[-1]],
         [hist.iloc[-1], pred_low[ticker]],
@@ -386,7 +367,6 @@ def plot_rolling_forecast(prices_assets: pd.DataFrame, pred_base: pd.Series, pre
         label="Forecast Range"
     )
     
-    # 极简背景与边框处理
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_color('#cbd5e1')
@@ -394,13 +374,11 @@ def plot_rolling_forecast(prices_assets: pd.DataFrame, pred_base: pd.Series, pre
     ax.tick_params(colors='#64748b', which='both')
     ax.set_ylabel("Price (USD)", color='#64748b', fontsize=10, loc='top')
     ax.grid(axis='y', linestyle='--', alpha=0.3)
-    
-    # 图例设置在上方
     ax.legend(loc='upper left', ncol=3, frameon=False, fontsize=10)
     plt.tight_layout()
     return fig
 
-#-----------------------------------------
+# Computes CAPM metrics for each ticker relative to the market benchmark
 def compute_capm_table(rets_assets: pd.DataFrame, rets_mkt: pd.Series, rf_annual: float):
     """
     rets_assets: DataFrame, columns=tickers, daily returns
@@ -409,17 +387,14 @@ def compute_capm_table(rets_assets: pd.DataFrame, rets_mkt: pd.Series, rf_annual
     """
     # daily rf from annual rf
     rf_daily = (1 + rf_annual) ** (1 / TRADING_DAYS) - 1
-
-    # align
     idx = rets_assets.index.intersection(rets_mkt.index)
-    X = (rets_mkt.loc[idx] - rf_daily).astype(float)  # market excess
-    mkt_prem_ann = X.mean() * TRADING_DAYS            # annualized market risk premium
+    X = (rets_mkt.loc[idx] - rf_daily).astype(float)  
+    mkt_prem_ann = X.mean() * TRADING_DAYS            
 
     out = []
     for t in rets_assets.columns:
-        y = (rets_assets.loc[idx, t] - rf_daily).astype(float)  # stock excess
+        y = (rets_assets.loc[idx, t] - rf_daily).astype(float)  
 
-        # drop NA
         df_tmp = pd.concat([X.rename("mkt_excess"), y.rename("stk_excess")], axis=1).dropna()
         if len(df_tmp) < 30:
             continue
@@ -457,10 +432,6 @@ def compute_capm_table(rets_assets: pd.DataFrame, rets_mkt: pd.Series, rf_annual
         capm_df = capm_df.sort_values("Beta", ascending=False).reset_index(drop=True)
     return capm_df
 
-
-# -----------------------
-# Sidebar UI (干净利落，没有 weight 输入框了)
-# -----------------------
 st.sidebar.header("Inputs")
 
 tickers_text = st.sidebar.text_input("Tickers", value="AAPL MSFT NVDA")
@@ -476,8 +447,6 @@ selected_label = st.sidebar.selectbox(
     list(period_options.keys()),
     index=1
 )
-
-# 👉 关键：后面仍然用 period = "1y"/"3y"/"5y"
 period = period_options[selected_label]
 
 run = st.sidebar.button("Run")
@@ -491,23 +460,18 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("<p style='font-size:20px; font-weight:700; color:#475569;'>Enter tickers and click Run</p>", unsafe_allow_html=True)
 
-
-# -----------------------
-# 主逻辑 (核心计算在顶部，渲染在底部)
-# -----------------------
 if 'has_run' not in st.session_state:
     st.session_state['has_run'] = False
 
 if run:
     st.session_state['has_run'] = True
-    # 如果用户重新点击了 run，我们把之前的权重记录清空，恢复均等权重
     
 
 if not st.session_state['has_run']:
     st.info("Enter tickers and click Run in the sidebar.")
 else:
     try:
-        # === 1. 数据准备阶段 ===
+        # data preparation
         tickers = parse_tickers(tickers_text)
         if len(tickers) < 2:
             st.error("Please enter at least 2 tickers.")
@@ -515,7 +479,7 @@ else:
             
         n = len(tickers)
 
-        # 1) download user tickers ONLY
+        # download user tickers ONLY
         prices_assets_all = fetch_prices(tickers, period=period)
 
         # drop tickers that failed (only for user assets)
@@ -533,7 +497,7 @@ else:
         tickers = tickers_used_input
         n = len(tickers)
 
-        # 2) download SPY separately (do NOT mix with assets)
+        # download SPY separately
         prices_spy_df = fetch_prices(["SPY"], period=period)
         if "SPY" not in prices_spy_df.columns:
             st.error("SPY data missing. Needed for market_return feature.")
@@ -541,7 +505,7 @@ else:
 
         prices_spy = prices_spy_df["SPY"].copy()
 
-        # === 2. 权重解析阶段 ===
+        # Weight analysis
         if 'weight_input_str' not in st.session_state:
             st.session_state['weight_input_str'] = ""
             
@@ -551,7 +515,7 @@ else:
             st.warning(f"Weight input error: {e}. Defaulting to equal weights.")
             weights_used = np.ones(n) / n
 
-        # === 3. 全局核心计算阶段 (无论在哪个Page，这里都会被执行) ===
+        # calculation
         tickers_used, final_weights, ann_vol, corr, rc_df, cum, rets_assets = compute_current_metrics(
             prices_assets, weights_used
         )
@@ -562,8 +526,6 @@ else:
         rets_spy = rets_spy.loc[common_idx]
 
         # ML Features & Prediction
-        # ML Features & Prediction (use the SAME feature pipeline as training)
-       # ML Features & Prediction (use the SAME feature pipeline as training)
         w_vec = np.array(final_weights[:len(tickers_used)], dtype=float)
 
         X_rt = build_realtime_feature_vector(
@@ -571,11 +533,8 @@ else:
         rets_spy,
         w_vec
         )
-
-        # 只取最后一行，保证是 1-row
         X_rt2 = X_rt.tail(1)
 
-        # 预测结果强制压成一维，再取第一个值
         pred_vol = float(np.asarray(ridge.predict(X_rt2)).ravel()[0])
         pred_prob = float(np.asarray(rf.predict_proba(X_rt2))[0, 1])
 
@@ -591,9 +550,9 @@ else:
         else:
             risk_label = "Low"
 
-        # === 4. UI 页面分发阶段 ===
+        # UI design
+        # content of page 1: overview
         if page == "Page 1: Overview":
-            # --- 1. 权重输入区域 (保持功能性) ---
             st.markdown("<div style='font-size:30px; font-weight:900; color:#1e293b; margin-bottom:6px;'>⚖️ Set Portfolio Weights</div>", unsafe_allow_html=True)
             st.info(
                 "💡 **Instruction:** Enter relative weights separated by spaces (e.g., `2 3 5`). "
@@ -610,9 +569,8 @@ else:
 
             st.write("---")
 
-           # --- 2. 动态计算卡片所需的展示数据 (全部换为英文语境) ---
             v_val = ann_vol * 100
-            v_pct = min(v_val / 40 * 100, 100) # 刻度条百分比位置
+            v_pct = min(v_val / 40 * 100, 100) 
             v_badge = "High" if v_val > 20 else "Low" if v_val < 10 else "Moderate"
             
             r_val = exp_return * 100
@@ -627,7 +585,7 @@ else:
             m_pct = min(m_val, 100)
             m_badge = "High Risk" if risk_label == "High" else "Medium Risk" if risk_label == "Medium" else "Low Risk"
 
-            # --- 3. 核心 CSS 样式 (保持不变) ---
+            # CSS for styling pages
             custom_css = """
             <style>
             .overview-title { font-size: 32px; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
@@ -678,7 +636,6 @@ else:
             """
             st.markdown(custom_css, unsafe_allow_html=True)
 
-            # --- 4. 生成 HTML 结构 (已全部替换为英文文本，请顶格复制) ---
             html_content = f"""
 <div class="overview-title">Portfolio Overview</div>
 <div class="overview-sub">Key metrics at a glance, helping you quickly understand the risk and return profile of your portfolio.</div>
@@ -780,7 +737,7 @@ else:
 """
             st.markdown(html_content, unsafe_allow_html=True)
 
-            # 动画 JS
+            # add animation effect
             st.markdown(f"""
             <script>
             setTimeout(function() {{
@@ -795,13 +752,13 @@ else:
             </script>
             """, unsafe_allow_html=True)
 
-            
+        # content for page 2: historical performance
         elif page == "Page 2: Historical Performance":
             from datetime import date
 
-            # === 计算汇总指标 ===
+            # Calculate summary indicators
             portfolio_return = rets_assets[tickers_used].dot(final_weights[:len(tickers_used)])
-            cum_indexed = (1 + portfolio_return).cumprod() * 100  # 以100为基准
+            cum_indexed = (1 + portfolio_return).cumprod() * 100 
             cum_return, ann_return, avg_rolling_vol, rolling_vol = compute_history_summary(
                 (1 + portfolio_return).cumprod(), portfolio_return
             )
@@ -814,7 +771,6 @@ else:
             cum_color  = "#16a34a" if cum_return >= 0 else "#dc2626"
             ann_color  = "#16a34a" if ann_return >= 0 else "#dc2626"
 
-            # === Header ===
             st.markdown(f"""
             <style>
             .h2-header {{
@@ -933,7 +889,7 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-            # === Chart 1: Cumulative Return ===
+            # Cumulative Return
             st.markdown("""
             <div class="section-card">
                 <div class="section-title">
@@ -943,7 +899,6 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-            # 构建逐帧数据
             x_data = cum_indexed.index.tolist()
             y_data = cum_indexed.values.tolist()
             steps = 60
@@ -962,7 +917,7 @@ else:
                         fillcolor='rgba(22,163,74,0.08)',
                     )]
                 ))
-
+            # Builds and renders an interactive Plotly line chart showing portfolio cumulative return indexed to 100, with a labeled endpoint annotation.
             fig1 = go.Figure()
             fig1.add_trace(go.Scatter(
                 x=cum_indexed.index,
@@ -997,7 +952,7 @@ else:
             )
             st.plotly_chart(fig1, use_container_width=True)
            
-            
+            # Injects a JavaScript animation to draw the cumulative return chart from left to right over 40 frames, then renders an insight box showing portfolio growth with a $10,000 investment example.
             st.markdown("""
             <script>
             setTimeout(function() {
@@ -1046,7 +1001,7 @@ else:
             st.write("")
             st.write("")
 
-            # === Chart 2: Rolling Volatility ===
+            #  Chart of Rolling Volatility 
             st.markdown("""
             <div class="section-card">
                 <div class="section-title">
@@ -1056,7 +1011,7 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-            rv = rolling_vol.dropna() * 100  # convert to %
+            rv = rolling_vol.dropna() * 100 
             avg_rv = rv.mean()
             high_threshold = 40.0
             low_threshold = 10.0
@@ -1079,7 +1034,7 @@ else:
                         fillcolor='rgba(124,58,237,0.08)',
                     )]
                 ))
-
+            # Builds and renders an interactive Plotly line chart showing 20-day rolling volatility with reference lines for high, average, and low volatility thresholds.
             fig2 = go.Figure()
             fig2.add_trace(go.Scatter(
                 x=rv.index, y=rv.values,
@@ -1129,7 +1084,7 @@ else:
                 showlegend=False,
             )
             st.plotly_chart(fig2, use_container_width=True)
-
+            # Injects a JavaScript animation to draw the rolling volatility chart from left to right over 40 frames.
             st.markdown("""
             <script>
             setTimeout(function() {
@@ -1158,7 +1113,7 @@ else:
             }, 800);
             </script>
             """, unsafe_allow_html=True)
-
+            # Renders a purple insight box explaining the current rolling volatility value and what it means for portfolio risk.
             st.markdown(f"""
             <div class="insight-box insight-box-purple">
                 <div class="insight-icon insight-icon-purple">〰️</div>
@@ -1177,7 +1132,7 @@ else:
             st.write("")
             st.write("")
 
-            # === How to Interpret ===
+            # Renders a three-card educational section explaining how to interpret rising returns, volatility spikes, and long-term investing.
             st.markdown("""
             <div class="interpret-section">
                 <div class="interpret-title">📈 How to Interpret These Charts</div>
@@ -1207,16 +1162,12 @@ else:
             </div>
             """, unsafe_allow_html=True)
         
-
-
-
-        #从这开始
+        # content of page 3: rolling forecast
         elif page == "Page 3: Rolling Forecast":
 
             st.markdown("<div style='font-size:30px; font-weight:900; color:#1e293b; margin-bottom:6px;'>📅 Rolling Forecast</div>", unsafe_allow_html=True)
             st.markdown("<p style='color:#64748b; font-size:14px; margin-top:-16px;'>We look at the past 60 trading days to estimate what might happen in the next 20 trading days.</p>", unsafe_allow_html=True)
 
-            # 获取数据
             latest_prices, avg_daily_ret, pred_ret_20d, pred_low, pred_base, pred_high, summary_df = rolling_forecast(
                 prices_assets[tickers_used], horizon=20, lookback=60
             )
@@ -1224,7 +1175,7 @@ else:
             first_ticker = tickers_used[0]
             first_pred = pred_ret_20d[first_ticker]
 
-            # 判断信号
+            # Generate a trend signal (bullish, bearish, neutral) for the first asset based on the predicted 20-day return rate, and set the corresponding color, icon and descriptive text
             if first_pred > 0.02:
                 signal = "Bullish"
                 signal_color = "#16a34a"
@@ -1249,7 +1200,7 @@ else:
 
             pred_sign = "+" if first_pred > 0 else ""
 
-            # === 三张卡片 ===
+            # Renders three summary metric cards showing forecast horizon, predicted return, and trend signal for the first ticker.
             col1, col2, col3 = st.columns(3)
 
             with col1:
@@ -1282,7 +1233,7 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
 
-            # === Forecast Summary Table ===
+            # Forecast Summary Table
             st.markdown("<h3 style='font-size:20px; font-weight:700; color:#1e293b; margin-bottom:12px;'>📊 Forecast Summary</h3>", unsafe_allow_html=True)
 
             display_df = summary_df.copy()
@@ -1323,9 +1274,9 @@ else:
                 )
             )
 
-            # === What Do These Results Mean ===
+            #Meaning of Results
             st.markdown("<h3 style='font-size:20px; font-weight:700; color:#1e293b; margin-bottom:12px;'>🤔 What Do These Results Mean?</h3>", unsafe_allow_html=True)
-
+            # Renders three color-coded explanation cards describing positive, negative, and neutral forecast scenarios.
             ic1, ic2, ic3 = st.columns(3)
             with ic1:
                 st.markdown("""
@@ -1349,23 +1300,20 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
         
-
+        # content of page 4: CAPM analysis
         elif page == "Page 4: CAPM Analysis":
             st.markdown("<div style='font-size:30px; font-weight:900; color:#1e293b; margin-bottom:6px;'>📐 CAPM Analysis</div>", unsafe_allow_html=True)
-            # 1. 顶部标题区域
             st.write("---")
 
-            # 2. 创建容器来控制视觉顺序 (UI顺序：图表 -> 参数假设 -> 表格)
-            # 这样可以在代码逻辑上先获取参数进行计算，但在视觉上图表排在前面
+            # Creates three bordered containers for the CAPM page, controlling the visual order of chart, model assumptions, and results table.
             chart_container = st.container(border=True)
             assumptions_container = st.container(border=True)
             table_container = st.container(border=True)
 
-            # 3. 在假设容器中获取参数 (Model Assumptions)
+            # Model Assumptions
             with assumptions_container:
                 st.markdown("#### Model Assumptions")
                 st.caption("Set your annual risk-free rate used in CAPM calculation.")
-                # 使用列布局让输入框不要占满整行，更精致
                 col_input, _ = st.columns([1, 2])
                 with col_input:
                     rf_pct = st.number_input(
@@ -1374,7 +1322,7 @@ else:
                     )
                 rf_annual = rf_pct / 100.0
 
-                # 4. 数据计算逻辑
+                # Computes the CAPM table using the selected assets, SPY returns as the market benchmark, and the user-defined risk-free rate.
                 capm_assets = rets_assets[tickers_used].copy()
                 capm_df = compute_capm_table(capm_assets, rets_spy, rf_annual)
 
@@ -1382,23 +1330,21 @@ else:
                 st.warning("Not enough data to estimate CAPM (need at least ~30 overlapping daily observations).")
                 st.stop()
 
-                # 5. 在图表容器中渲染图表 (CAPM Beta by Ticker)
+                # CAPM Beta by Ticker
             with chart_container:
                 col_title, col_badge = st.columns([3, 1])
                 with col_title:
                     st.markdown("#### CAPM Beta by Ticker ⓘ")
                     st.caption("Beta measures a stock's sensitivity to the overall market (SPY).")
                 with col_badge:
-                        # 模拟右上角的灰色标签
                     st.markdown(
                         "<div style='background-color:#F3F4F6; color:#4B5563; padding:5px 10px; border-radius:15px; font-size:12px; text-align:center; margin-top:10px;'>" +
                         "Higher Beta = Higher Market Sensitivity" +
                         "</div>",
                         unsafe_allow_html=True
                     )
-                # Plotly 柱状图
                 fig = go.Figure()
-
+                # # Generates a list of hex colors interpolated from dark blue to light blue, one per ticker, to create a gradient effect across the CAPM bar chart.
                 n = len(capm_df)
                 start_color = np.array([29, 78, 216])    
                 end_color   = np.array([147, 197, 253]) 
@@ -1411,7 +1357,7 @@ else:
                     )
                     for i in range(n)
                 ]
-
+                # Renders a bar chart of Beta values per ticker with a light-to-dark blue colorscale mapped to Beta magnitude.
                 fig.add_trace(go.Bar(
                     x=capm_df["Ticker"],
                     y=capm_df["Beta"],
@@ -1428,15 +1374,14 @@ else:
                     ),
                     width=0.4
                 ))
-
-                #添加 Beta = 1 的虚线基准线
+                # Adds a dashed reference line at Beta = 1 to indicate the market average benchmark.
                 fig.add_hline(
                     y=1.0, line_dash="dash", line_color="#9CA3AF",
                     annotation_text="Market Average (Beta = 1)",
                     annotation_position="top right",
                     annotation_font_color="#6B7280"
                 )
-                
+                # Sets the chart layout with a white background, dynamic y-axis range, and renders the Beta bar chart in Streamlit.
                 fig.update_layout(
                     plot_bgcolor='white',
                     margin=dict(t=40, b=20, l=20, r=20),
@@ -1449,13 +1394,12 @@ else:
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
-                # 6. 在表格容器中渲染表格 (CAPM Results Table)
+            # CAPM Results Table
             with table_container:
                 st.markdown("#### CAPM Results Table") 
-                # 定义 Pandas Styler 的上色逻辑
-                def style_beta(v): return 'color: #2563EB; font-weight: bold;' # 蓝色
-                def style_alpha(v): return 'color: #DC2626; font-weight: bold;' if v < 0 else 'color: #16A34A; font-weight: bold;' # 红/绿
-                def style_return(v): return 'color: #16A34A; font-weight: bold;' # 绿色
+                def style_beta(v): return 'color: #2563EB; font-weight: bold;' 
+                def style_alpha(v): return 'color: #DC2626; font-weight: bold;' if v < 0 else 'color: #16A34A; font-weight: bold;' 
+                def style_return(v): return 'color: #16A34A; font-weight: bold;' 
                 styled_df = capm_df.style.format({
                     "Beta": "{:.3f}",
                     "Alpha (ann.)": "{:.2%}",
@@ -1468,13 +1412,13 @@ else:
                 .map(style_return, subset=['CAPM Expected Return (ann.)'])
                 st.dataframe(styled_df, use_container_width=True, hide_index=True)
 
-            # 7. 教学解释卡片 (How to Interpret Beta)
+            # How to Interpret Beta
             with st.container(border=True):
                 st.markdown("#### 💡 Beta Investment Strategy Guide")
                 st.write("") 
         
                 c1, c2, c3 = st.columns(3)
-                # --- Beta = 1 Module ---
+                # Beta = 1 Module
                 with c1:
                     st.markdown("### **Beta ≈ 1**")
                     st.markdown("<p style='color:#6B7280; font-size:14px;'>Market Benchmark: Moves in tandem with the market</p>", unsafe_allow_html=True)
@@ -1488,7 +1432,7 @@ else:
             
                     ⚠️ **Note:** Absolutely avoid heavily overweighting Beta=1 assets during the early/mid-stages of a bull market, as you will miss out on excess returns (alpha).
                     """)
-                # --- Beta > 1 Module ---
+                # Beta > 1 Module
                 with c2:
                     st.markdown("### **<span style='color:#2563EB'>Beta > 1</span>**", unsafe_allow_html=True)
                     st.markdown("<p style='color:#6B7280; font-size:14px;'>Offensive: More volatile than the market</p>", unsafe_allow_html=True)
@@ -1500,7 +1444,7 @@ else:
                     
                     **Characteristics:** Outperforms when the market rises, but experiences deeper drawdowns when the market falls.
                     """)
-                # --- Beta < 1 Module ---
+                # Beta < 1 Module
                 with c3:
                     st.markdown("### **<span style='color:#16A34A'>Beta < 1</span>**", unsafe_allow_html=True)
                     st.markdown("<p style='color:#6B7280; font-size:14px;'>Defensive: Portfolio 'Stabilizer'</p>", unsafe_allow_html=True)
@@ -1514,7 +1458,7 @@ else:
                     * **High Valuation / High Volatility:** Increase allocation ⬆️
                     * **Low Valuation / Early Bull Market:** Decrease allocation, shift to mid/high-beta assets ⬇️
                     """)
-                    # --- Dynamic Output: Portfolio Diagnostic ---
+                    # Dynamic Output: Portfolio Diagnostic 
                     low_beta_count = len(capm_df[capm_df["Beta"] < 1])
                     total_count = len(capm_df)
                     low_beta_ratio = low_beta_count / total_count if total_count > 0 else 0
@@ -1527,11 +1471,11 @@ else:
 
             st.caption("Note: CAPM is a theoretical model and does not guarantee future performance.")
 
-
+        # content of page 5: diversification risk
         elif page == "Page 5: Diversification Risk":
             from datetime import date
 
-            # === 预计算所需数据 ===
+            # Pre-calculate the required data
             top_risk_asset = rc_df.iloc[0]["ticker"]
             top_risk_pct = rc_df.iloc[0]["risk_contribution_pct_of_vol"]
             explanation = generate_correlation_explanation(corr)
@@ -1541,7 +1485,7 @@ else:
             div_bg    = "#fee2e2" if avg_corr > 0.6 else "#fffbeb" if avg_corr > 0.3 else "#ecfdf5"
             div_desc  = "There is room to improve diversification." if avg_corr > 0.3 else "Your portfolio is well diversified."
 
-            # === Header ===
+            # UI design
             st.markdown(f"""
             <style>
             .d5-header {{
@@ -1685,7 +1629,7 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-            # === Correlation Heatmap Section ===
+            # Correlation Heatmap Section
             st.markdown("""
             <div class="d5-sec-title">Correlation Heatmap</div>
             <div class="d5-sec-sub">This shows how closely the selected stocks move together.<br>
@@ -1724,7 +1668,7 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
 
-            # === Insight Box ===
+            # Insight Box
             st.markdown(f"""
             <div class="d5-insight">
                 <div class="d5-insight-avatar">🧑‍💼</div>
@@ -1741,7 +1685,7 @@ else:
             st.write("")
             st.write("")
 
-            # === Risk Contribution Section ===
+            # Risk Contribution Section
             st.markdown("""
             <div class="d5-sec-title">Risk Contribution</div>
             <div class="d5-sec-sub">This shows how much each holding contributes to the portfolio's total volatility.</div>
@@ -1795,7 +1739,7 @@ else:
             st.write("")
             st.write("")
 
-            # === What Can You Do Next ===
+            # What Can You Do Next
             st.markdown('<div class="d5-sec-title">What Can You Do Next?</div>', unsafe_allow_html=True)
             st.markdown("""
             <div class="next-grid">
@@ -1822,11 +1766,10 @@ else:
             </div>
             """, unsafe_allow_html=True)
            
-        
+        # content of page 6: radar chart for individual stock performance
         elif page == "Page 6: Individual Stock Performance":
             st.markdown("<div style='font-size:30px; font-weight:900; color:#1e293b; margin-bottom:6px;'>📡 Individual Stock Performance Across Key Metrics</div>", unsafe_allow_html=True)
             from datetime import date
-            # === Header ===
             st.markdown(f"""
             <style>
             .radar-header {{
@@ -1863,10 +1806,9 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-            # === Compute ===
+            # Process of computing
             raw_df, norm_df = compute_radar_metrics(prices_assets[tickers_used], final_weights)
 
-            # === Radar Chart ===
             categories = ["Ann. Return", "Max Drawdown", "Calmar Ratio", "Sharpe Ratio", "CVaR (95%)"]
             labels_display = [
                 "Ann. Return\n(Normalized)",
@@ -1929,7 +1871,7 @@ else:
 
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-            # === Understanding the Metrics Table ===
+            # Understanding the Metrics Table
             st.markdown("""
             <style>
             .metrics-section {{
@@ -2030,7 +1972,7 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-            # === Best / Worst Cards ===
+            # Best / Worst Cards
             norm_df["Total Score"] = norm_df[categories].mean(axis=1)
             best_ticker = norm_df["Total Score"].idxmax()
             worst_ticker = norm_df["Total Score"].idxmin()
@@ -2080,7 +2022,7 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-           # === What Do These Scores Mean ===
+           # What Do These Scores Mean
             st.markdown("""
             <style>
             .scores-wrapper {
@@ -2154,7 +2096,7 @@ else:
                 </div>
             </div>
             """, unsafe_allow_html=True)
-                    
+    # Catches and displays any runtime errors with a full traceback for debugging.               
     except Exception as e:
         st.error("Error processing inputs")
         st.code(traceback.format_exc())
