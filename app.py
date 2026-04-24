@@ -2026,6 +2026,8 @@ else:
                 </table>
                 <div class="info-note">
                     ℹ️ All metrics are normalized for comparison. Higher normalized score = better performance.
+                        
+                    
                 </div>
             </div>
             """, unsafe_allow_html=True)
