@@ -485,7 +485,7 @@ run = st.sidebar.button("Run")
 page = st.sidebar.radio(
 
     "Go to page",
-    ["Page 1: Overview", "Page 2: Historical Performance", "Page 3: Rolling Forecast", "Page 4: CAPM", "Page 5: Diversification Risk", "Page 6: Individual Stock Performance Across Key Metrics"],
+    ["Page 1: Overview", "Page 2: Historical Performance", "Page 3: Rolling Forecast", "Page 4: CAPM Analysis", "Page 5: Diversification Risk", "Page 6: Individual Stock Performance Across Key Metrics"],
     index=0
 )
 
@@ -1350,7 +1350,7 @@ else:
                 """, unsafe_allow_html=True)
         
 
-        elif page == "Page 4: CAPM":
+        elif page == " Page 4: CAPM Analysis":
             st.markdown("<div style='font-size:30px; font-weight:900; color:#1e293b; margin-bottom:6px;'>📐 CAPM Analysis</div>", unsafe_allow_html=True)
             # 1. 顶部标题区域
             st.write("---")
