@@ -1398,12 +1398,26 @@ else:
                     )
                 # Plotly 柱状图
                 fig = go.Figure()
+
+                n = len(capm_df)
+                start_color = np.array([29, 78, 216])    # #1D4ED8 深蓝
+                end_color   = np.array([147, 197, 253])  # #93C5FD 浅蓝
+
+                gradient_colors = [
+                    '#{:02x}{:02x}{:02x}'.format(
+                        int(start_color[0] + (end_color[0] - start_color[0]) * i / max(n-1, 1)),
+                        int(start_color[1] + (end_color[1] - start_color[1]) * i / max(n-1, 1)),
+                        int(start_color[2] + (end_color[2] - start_color[2]) * i / max(n-1, 1)),
+                    )
+                    for i in range(n)
+                ]
+
                 fig.add_trace(go.Bar(
                     x=capm_df["Ticker"],
                     y=capm_df["Beta"],
                     text=capm_df["Beta"].apply(lambda x: f"{x:.2f}"),
                     textposition='outside',
-                    marker_color='#60A5FA', # 现代清爽蓝
+                    marker_color=gradient_colors,
                     width=0.4
                 ))
 
