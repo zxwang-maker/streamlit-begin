@@ -485,7 +485,7 @@ run = st.sidebar.button("Run")
 page = st.sidebar.radio(
 
     "Go to page",
-    ["Page 1: Risk", "Page 2: History", "Page 3: Rolling Forecast", "Page 4: CAPM", "Page 5: Diversification", "Page 6: Individual Stock Performance Across Key Metrics"],
+    ["Page 1: Overview", "Page 2: Historical Performance", "Page 3: Rolling Forecast", "Page 4: CAPM", "Page 5: Diversification Risk", "Page 6: Individual Stock Performance Across Key Metrics"],
     index=0
 )
 
@@ -592,7 +592,7 @@ else:
             risk_label = "Low"
 
         # === 4. UI 页面分发阶段 ===
-        if page == "Page 1: Risk":
+        if page == "Page 1: Overview":
             # --- 1. 权重输入区域 (保持功能性) ---
             st.markdown("<div style='font-size:30px; font-weight:900; color:#1e293b; margin-bottom:6px;'>⚖️ Set Portfolio Weights</div>", unsafe_allow_html=True)
             st.info(
@@ -796,7 +796,7 @@ else:
             """, unsafe_allow_html=True)
 
             
-        elif page == "Page 2: History":
+        elif page == "Page 2: Historical Performance":
             from datetime import date
 
             # === 计算汇总指标 ===
@@ -1528,7 +1528,7 @@ else:
             st.caption("Note: CAPM is a theoretical model and does not guarantee future performance.")
 
 
-        elif page == "Page 5: Diversification":
+        elif page == "Page 5: Diversification Risk":
             from datetime import date
 
             # === 预计算所需数据 ===
@@ -1654,7 +1654,7 @@ else:
 
             <div class="d5-header">
                 <div>
-                    <div class="d5-title">🛡️ Portfolio Risk Dashboard</div>
+                    <div class="d5-title">🛡️ Diversification Risk</div>
                     <div class="d5-sub">Understand how your holdings contribute to risk and how they move together.</div>
                 </div>
                 <div class="d5-daterange">📅 Data as of<br><strong>{date.today().strftime("%B %d, %Y")}</strong></div>
