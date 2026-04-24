@@ -1485,8 +1485,10 @@ else:
                     st.markdown("🛡️ **All Low Betas (<1):** More defensive. Lower risk, but may also mean lower growth potential.")
                     st.write("")
                     st.success("""
-                    st.markdown("**Strategy Logic:**  \nLow-beta stocks act as a stabilizer to hedge against the volatility of mid-to-high beta growth and cyclical stocks.")
+                    **Strategy Logic:**
                                
+                    Low-beta stocks act as a stabilizer to hedge against the volatility of mid-to-high beta growth and cyclical stocks.
+                    
                     * **High Valuation / High Volatility:** Increase allocation ⬆️
                     * **Low Valuation / Early Bull Market:** Decrease allocation, shift to mid/high-beta assets ⬇️
                     """)
